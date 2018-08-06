@@ -87,6 +87,65 @@
       firebase.initializeApp(config);
     </script>
     
+    <script>
+      function currentFileInfo() {
+        let file = document.querySelector('#photo').files[0];
+        if (!file) { return ''; }
+        return {
+          lastModified: new Date(file.lastModified).toISOString(),
+          name: file.name,
+          size: file.size,
+          type: file.type,
+        };
+      }
+      
+      const digits = {
+        0: ['md-heart', '0xf308'],
+        1: ['ios-moon', '0xf468'],
+        2: ['md-flower', '0xf2f3'],
+        3: ['ios-star', '0xf4b3'],
+        4: ['ios-sunny', '0xf4b7'],
+        5: ['md-play', '0xf357'],
+        6: ['md-cloud', '0xf2c9'],
+        7: ['ios-square', '0xf21a'],
+        8: ['md-water', '0xf3a7'],
+        9: ['ios-happy', '0xf192'],
+      };
+      
+      function digitForChar(ch) {
+        for (let e of Object.entries(digits)) {
+          let testChar = String.fromCodePoint( parseInt(e[1][1], 16) );
+          if (ch == testChar) { return e[0]; }
+        }
+        return '';
+      }
+      
+      function currentCode() {
+        let codeStr = document.querySelector('#code').value;
+        if (!codeStr) { return ''; }
+        let code = '';
+        for (let ch of codeStr) {
+          code += digitForChar(ch);
+        }
+        return code;
+      }
+      
+      document.addEventListener('DOMContentLoaded', () => {
+        let db = firebase.firestore();
+        document.querySelector('#submit').addEventListener('click', e => {
+          // Assemble request data
+          let req_data = {
+            name: document.querySelector('#name').value,
+            photo: currentFileInfo(),
+            code: currentCode(),
+            location: document.querySelector('#location').data || '',
+            timestamp: new Date().toISOString(),
+          };
+          console.log(req_data);
+        });
+      });
+    </script>
+    
     <!-- <script>
       document.addEventListener('DOMContentLoaded', function() {
         // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
