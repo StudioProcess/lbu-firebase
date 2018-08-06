@@ -1,0 +1,41 @@
+[debug] [2018-08-06T13:19:40.998Z] ----------------------------------------------------------------------
+[debug] [2018-08-06T13:19:41.000Z] Command:       /usr/local/bin/iojs /Users/ml/Documents/code/lbu-site-firebase/node_modules/.bin/firebase serve --port 8080
+[debug] [2018-08-06T13:19:41.000Z] CLI Version:   4.0.3
+[debug] [2018-08-06T13:19:41.000Z] Platform:      darwin
+[debug] [2018-08-06T13:19:41.000Z] Node Version:  v8.11.3
+[debug] [2018-08-06T13:19:41.001Z] Time:          Mon Aug 06 2018 15:19:41 GMT+0200 (CEST)
+[debug] [2018-08-06T13:19:41.001Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2018-08-06T13:19:41.010Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2018-08-06T13:19:41.010Z] > authorizing via signed-in user
+[debug] [2018-08-06T13:19:41.012Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/projects/letsbuildutopia-84770  
+  
+ Mon Aug 06 2018 15:19:41 GMT+0200 (CEST)
+[debug] [2018-08-06T13:19:42.121Z] <<< HTTP RESPONSE 200
+[debug] [2018-08-06T13:19:42.122Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/database/letsbuildutopia-84770/tokens  
+  
+ Mon Aug 06 2018 15:19:42 GMT+0200 (CEST)
+[debug] [2018-08-06T13:19:42.853Z] <<< HTTP RESPONSE 200
+[debug] [2018-08-06T13:19:42.854Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/letsbuildutopia-84770  
+  
+ Mon Aug 06 2018 15:19:42 GMT+0200 (CEST)
+[debug] [2018-08-06T13:19:43.747Z] <<< HTTP RESPONSE 200
+[info] 
+[info] === Serving from '/Users/ml/Documents/code/lbu-site-firebase'...
+[info] 
+[info] i  functions: Preparing to emulate functions.
+[debug] [2018-08-06T13:19:44.132Z] Fetching environment
+[debug] [2018-08-06T13:19:44.133Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/485035500196:getServerAppConfig  
+  
+ Mon Aug 06 2018 15:19:44 GMT+0200 (CEST)
+[debug] [2018-08-06T13:19:44.134Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/485035500196/clients/_:getWebAppConfig  
+  
+ Mon Aug 06 2018 15:19:44 GMT+0200 (CEST)
+[debug] [2018-08-06T13:19:44.592Z] <<< HTTP RESPONSE 200
+[debug] [2018-08-06T13:19:44.592Z] Starting @google-cloud/functions-emulator
+[debug] [2018-08-06T13:19:44.605Z] <<< HTTP RESPONSE 200
+[info] i  hosting: Serving hosting files from: public
+[info] ✔  hosting: Local server: http://localhost:8080
+
+[debug] [2018-08-06T13:19:45.645Z] Parsing function triggers
+[info] i  functions: No HTTPS functions found. Use firebase functions:shell if you would like to emulate other types of functions.

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Let's build utopia</title>
+    
+    <link href="https://unpkg.com/ionicons@4.2.6/dist/css/ionicons.min.css" rel="stylesheet">
+
+    <!-- update the version number as needed -->
+    <!-- <script defer src="/__/firebase/5.3.0/firebase-app.js"></script> -->
+    <!-- include only the Firebase features as you need -->
+    <!-- <script defer src="/__/firebase/5.3.0/firebase-auth.js"></script>
+    <script defer src="/__/firebase/5.3.0/firebase-database.js"></script>
+    <script defer src="/__/firebase/5.3.0/firebase-messaging.js"></script>
+    <script defer src="/__/firebase/5.3.0/firebase-storage.js"></script> -->
+    <!-- initialize the SDK after all desired features are loaded -->
+    <!-- <script defer src="/__/firebase/init.js"></script> -->
+
+    <style media="screen">
+      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
+      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
+      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
+      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
+      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
+      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
+      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
+      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
+      @media (max-width: 600px) {
+        body, #message { margin-top: 0; background: white; box-shadow: none; }
+        body { border-top: 16px solid #ffa100; }
+      }
+      #message, #load { display:none; }
+    </style>
+    
+    <style>
+      #code { font-family:"Ionicons",system-ui; letter-spacing:0.2em; }
+      #photo-display img:not([src]) { display:none; }
+      #photo-display img { max-height:100px; width:auto; }
+    </style>
+  </head>
+  
+  <body>
+    <div id="message">
+      <h2>Welcome</h2>
+      <h1>Firebase Hosting Setup Complete</h1>
+      <p>You're seeing this because you've successfully setup Firebase Hosting. Now it's time to go build something extraordinary!</p>
+      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
+    </div>
+    <p id="load">Firebase SDK Loading&hellip;</p>
+    
+    <div id="form">
+      <label for="name">Name</label> <input id="name" placeholder="Name"><br>
+      <label for="photo">Photo</label> <input id="photo" type="file" accept="image/*"><br>
+      <div id="photo-display"><img></div>
+      <label for="code">Code</label> <input id="code" placeholder="Code"><br>
+      <div id="keypad">
+        <button data-digit="0"><i class="icon ion-md-heart"></i></button>
+        <button data-digit="1"><i class="icon ion-ios-moon"></i></button>
+        <button data-digit="2"><i class="icon ion-md-flower"></i></button>
+        <button data-digit="3"><i class="icon ion-ios-star"></i></button>
+        <button data-digit="4"><i class="icon ion-ios-sunny"></i></button>
+        <button data-digit="5"><i class="icon ion-md-play"></i></button>
+        <button data-digit="6"><i class="icon ion-md-cloud"></i></button>
+        <button data-digit="7"><i class="icon ion-ios-square"></i></button>
+        <button data-digit="8"><i class="icon ion-md-water"></i></button>
+        <button data-digit="9"><i class="icon ion-ios-happy"></i></button>
+        <button class="btn-delete">delete</button><br>
+      </div>
+      <label for="location-select">Location</label> <input id="location-select" type="button" value="Allow to use your location"> <input id="location" type="text"><br>
+      <button id="submit" type="submit">Submit</button><br>
+    </div>
+    
+    <!-- Firebase App is always required and must be first -->
+    <script src="https://www.gstatic.com/firebasejs/5.3.0/firebase-app.js"></script>
+    <!-- Add additional services that you want to use -->
+    <script src="https://www.gstatic.com/firebasejs/5.3.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/5.3.0/firebase-storage.js"></script>
+    <!-- <script src="https://www.gstatic.com/firebasejs/5.3.0/firebase-functions.js"></script> -->
+    <script>
+      // Initialize Firebase
+      var config = {
+        apiKey: "AIzaSyCdr0kpTbsED6du_p-RulO_m4L7aglFoio",
+        authDomain: "letsbuildutopia-84770.firebaseapp.com",
+        databaseURL: "https://letsbuildutopia-84770.firebaseio.com",
+        projectId: "letsbuildutopia-84770",
+        storageBucket: "letsbuildutopia-84770.appspot.com",
+        messagingSenderId: "485035500196"
+      };
+      firebase.initializeApp(config);
+    </script>
+    
+    <!-- <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+        // // The Firebase SDK is initialized and available here!
+        //
+        // firebase.auth().onAuthStateChanged(user => { });
+        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
+        // firebase.messaging().requestPermission().then(() => { });
+        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
+        //
+        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+
+        try {
+          let app = firebase.app();
+          let features = ['auth', 'database', 'messaging', 'storage'].filter(feature => typeof app[feature] === 'function');
+          document.getElementById('load').innerHTML = `Firebase SDK loaded with ${features.join(', ')}`;
+        } catch (e) {
+          console.error(e);
+          document.getElementById('load').innerHTML = 'Error loading the Firebase SDK, check the console.';
+        }
+      });
+    </script> -->
+    
+    <script>
+      'use strict';
+      // Code entry
+      (function() {
+        const digits = {
+          0: ['md-heart', '0xf308'],
+          1: ['ios-moon', '0xf468'],
+          2: ['md-flower', '0xf2f3'],
+          3: ['ios-star', '0xf4b3'],
+          4: ['ios-sunny', '0xf4b7'],
+          5: ['md-play', '0xf357'],
+          6: ['md-cloud', '0xf2c9'],
+          7: ['ios-square', '0xf21a'],
+          8: ['md-water', '0xf3a7'],
+          9: ['ios-happy', '0xf192'],
+        };
+        function characterForDigit(d) {
+          let hex = digits[d][1];
+          let cp= parseInt(hex, 16); // the 16 is not actually necessary when using hex formatted as 0xABCD
+          return String.fromCodePoint(cp);
+        }
+        let input = document.querySelector('#code');
+        let buttons = document.querySelectorAll('#keypad button');
+        buttons.forEach(el => {
+          el.addEventListener('click', e => {
+            input.value += characterForDigit(el.dataset.digit);
+          });
+        });
+        document.querySelector('#keypad .btn-delete').addEventListener('click', e => {
+          input.value = input.value.slice(0, -1);
+        });
+      })();
+      
+      // Photo selection
+      (function() {
+        let input = document.querySelector('#photo');
+        input.addEventListener('change', e => {
+          let file = e.target.files[0];
+          if (!file.type.startsWith('image/')){ return; }
+          let img = document.querySelector('#photo-display img');
+          let reader = new FileReader();
+          reader.onload = e => { img.src = e.target.result; };
+          reader.readAsDataURL(file);
+        });
+      })();
+      
+      // Location
+      (function() {
+        if (typeof navigator.geolocation !== 'object') { return; }
+        let loc = document.querySelector('#location');
+        document.querySelector('#location-select').addEventListener('click', e => {
+          navigator.geolocation.getCurrentPosition(pos => {
+            let posdata = {
+              coords: {
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+                altitude: pos.coords.altitude,
+                accuracy: pos.coords.accuracy,
+                altitudeAccuracy: pos.coords.altitudeAccuracy,
+                heading: pos.coords.heading,
+                speed: pos.coords.speed
+              },
+              timestamp: pos.timestamp
+            }
+            loc.value = JSON.stringify(posdata, null, 0);
+          }, err => {
+            console.log("error getting geolocation", err);
+          }, {enableHighAccuracy:false});
+        });
+      })();
+  </script>
+  </body>
+</html>
