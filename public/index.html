@@ -134,8 +134,10 @@
           return code;
         }
         
+        const db = firebase.firestore();
+        db.settings({ timestampsInSnapshots:true }); // See: https://firebase.google.com/docs/reference/js/firebase.firestore.Settings#~timestampsInSnapshots
+        
         document.addEventListener('DOMContentLoaded', () => {
-          let db = firebase.firestore();
           document.querySelector('#submit').addEventListener('click', e => {
             // Assemble request data
             let req_data = {
@@ -146,6 +148,11 @@
               timestamp: new Date().toISOString(),
             };
             console.log(req_data);
+            db.collection('uploads').add(req_data).then(doc => {
+              console.log('Doc written:', doc);
+            }).catch(err => {
+              console.log('Error adding doc: ', err);
+            });
           });
         });
       })();
