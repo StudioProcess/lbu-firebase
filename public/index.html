@@ -109,7 +109,7 @@
           let file = document.querySelector('#photo').files[0];
           if (!file) { return ''; }
           return {
-            lastModified: new Date(file.lastModified).toISOString(),
+            lastModified: new Date(file.lastModified),
             name: file.name,
             size: file.size,
             type: file.type,
@@ -145,7 +145,7 @@
               photo: currentFileInfo(),
               code: currentCode(),
               location: document.querySelector('#location').data || '',
-              timestamp: new Date().toISOString(),
+              timestamp: new Date(),
             };
             console.log(req_data);
             db.collection('uploads').add(req_data).then(doc => {
@@ -205,7 +205,7 @@
                 heading: pos.coords.heading,
                 speed: pos.coords.speed
               },
-              timestamp: new Date(pos.timestamp).toISOString(),
+              timestamp: new Date(pos.timestamp),
             }
             loc.data = posdata;
             loc.value = JSON.stringify(posdata, null, 0);
