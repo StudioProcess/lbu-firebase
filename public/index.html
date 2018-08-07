@@ -145,7 +145,8 @@
               photo: currentFileInfo(),
               code: currentCode(),
               location: document.querySelector('#location').data || '',
-              timestamp: new Date(),
+              clientTimestamp: new Date(),
+              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             };
             console.log(req_data);
             db.collection('uploads').add(req_data).then(doc => {
