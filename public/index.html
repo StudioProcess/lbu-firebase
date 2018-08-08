@@ -142,7 +142,8 @@
             // Assemble request data
             let req_data = {
               name: document.querySelector('#name').value,
-              photo: currentFileInfo(),
+              photoMetadata: currentFileInfo(),
+              photoUploaded: false,
               code: currentCode(),
               location: document.querySelector('#location').data || '',
               clientTimestamp: new Date(),
@@ -150,7 +151,10 @@
             };
             console.log(req_data);
             db.collection('uploads').add(req_data).then(doc => {
-              console.log('Doc written:', doc);
+              console.log('Doc written:', doc.id);
+              db.collection('uploads').doc(doc.id).onSnapshot(doc => {
+                console.log('data changed:', doc.data());
+              });
             }).catch(err => {
               console.log('Error adding doc: ', err);
             });
