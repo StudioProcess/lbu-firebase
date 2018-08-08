@@ -1,8 +1,13 @@
 const functions = require('firebase-functions');
+// const admin = require('firebase-admin');
+// admin.initializeApp();
 
-// // Create and Deploy Your First Cloud Functions
-// // https://firebase.google.com/docs/functions/write-firebase-functions
-//
-// exports.helloWorld = functions.https.onRequest((request, response) => {
-//  response.send("Hello from Firebase!");
-// });
+exports.checkUpload = functions.storage.object().onFinalize( (object, context) => {
+  // const fileBucket = object.bucket; // The Storage bucket that contains the file.
+  // const filePath = object.name; // File path in the bucket.
+  // const contentType = object.contentType; // File content type.
+  // const metageneration = object.metageneration; // Number of times metadata has been generated. New objects have a value of 1.
+  console.log('object:', object);
+  console.log('context:', context);
+  return null;
+});
