@@ -136,6 +136,7 @@
         
         const db = firebase.firestore();
         db.settings({ timestampsInSnapshots:true }); // See: https://firebase.google.com/docs/reference/js/firebase.firestore.Settings#~timestampsInSnapshots
+        const storage = firebase.storage();
         
         document.addEventListener('DOMContentLoaded', () => {
           document.querySelector('#submit').addEventListener('click', e => {
@@ -149,12 +150,26 @@
               clientTimestamp: new Date(),
               timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             };
+            let file = document.querySelector('#photo').files[0];
             console.log(req_data);
             db.collection('uploads').add(req_data).then(doc => {
               console.log('Doc written:', doc.id);
               db.collection('uploads').doc(doc.id).onSnapshot(doc => {
                 console.log('data changed:', doc.data());
               });
+              
+              // upload photo
+              let storageRef = storage.ref(`${doc.id}/${req_data.photoMetadata.name}`);
+              let uploadTask = storageRef.put(file);
+              uploadTask.on('state_changed', snapshot => {
+                let progress = Math.floor(snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                console.log('Uploading: ' + progress + '%');
+              }, err => {
+                console.log('Error uploading file:', err);
+              }, () => {
+                console.log('Upload successful');
+              });
+              
             }).catch(err => {
               console.log('Error adding doc: ', err);
             });
