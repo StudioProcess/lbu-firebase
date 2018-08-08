@@ -127,11 +127,11 @@
         function currentCode() {
           let codeStr = document.querySelector('#code').value;
           if (!codeStr) { return ''; }
-          let code = '';
+          let code = [];
           for (let ch of codeStr) {
-            code += digitForChar(ch);
+            code.push( digitForChar(ch) );
           }
-          return code;
+          return code.join('_');
         }
         
         const db = firebase.firestore();
