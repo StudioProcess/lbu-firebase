@@ -10,9 +10,11 @@
     "shell": "firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
+    "deploy:cleanup": "firebase deploy --only functions:cleanup",
     "logs": "firebase functions:log"
   },
   "dependencies": {
+    "es6-promise-pool": "^2.5.0",
     "firebase-admin": "^6.0.0",
     "firebase-functions": "^2.0.5"
   },
