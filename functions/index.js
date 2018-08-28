@@ -38,7 +38,7 @@ exports.checkUpload = functions.storage.object().onFinalize( (object, context) =
 
 const crypto = require('crypto');
 const PromisePool = require('es6-promise-pool').PromisePool;
-const UPLOAD_TIMEOUT = 3600 * 1000;
+const UPLOAD_TIMEOUT = 3600 * 1000; // [ms]
 const MAX_CONCURRENT = 3;
 
 exports.cleanup = functions.https.onRequest((req, res) => {
@@ -57,30 +57,30 @@ exports.cleanup = functions.https.onRequest((req, res) => {
     return null;
   }
   
-  // Find uploads with photoUpload = PENDING and older than a day
-  return firestore.collection('uploads')
+  // Find uploads with photoUpload = PENDING and older than UPLOAD_TIMEOUT
+  // Delete found docs (using promise pool)
+  const uploads = firestore.collection('uploads');
+  return uploads
   .where('photoUpload', '==', 'PENDING')
   .where('timestamp', '<', new Date(Date.now() - UPLOAD_TIMEOUT))
   .get().then(result => {
-    // console.log(result.size);
-    let data = result.size + '\n' + result.docs.map(doc => doc.id ).join('\n');
-    res.status(200).send(data);
+    let idsToDelete = result.docs.map(doc => doc.id );
+    if (result.size > 0) {
+       console.log(`To delete: ${result.size}, IDs: ${idsToDelete}`);
+    } else {
+      console.log('Nothing to delete');
+    }
+    const promisePool = new PromisePool(() => {
+      let doc = result.docs.pop();
+      return doc ? doc.ref.delete() : null;
+    }, MAX_CONCURRENT);
+    return promisePool.start();
+  }).then(() => {
+    res.send('Upload cleanup finished');
     return null;
   }).catch(err => {
     console.error(err);
+    res.sendStatus(500);
     return null;
   });
-  
-  // TODO: delete found docs (using promise pool)
-  
-  // // Fetch all user details.
-  // return getInactiveUsers().then((inactiveUsers) => {
-  //   // Use a pool so that we delete maximum `MAX_CONCURRENT` users in parallel.
-  //   const promisePool = new PromisePool(() => deleteInactiveUser(inactiveUsers), MAX_CONCURRENT);
-  //   return promisePool.start();
-  // }).then(() => {
-  //   console.log('User cleanup finished');
-  //   res.send('User cleanup finished');
-  //   return null;
-  // });
 });
