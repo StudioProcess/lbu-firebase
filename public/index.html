@@ -69,7 +69,7 @@
         <button data-digit="7"><i class="icon ion-ios-square"></i></button>
         <button data-digit="8"><i class="icon ion-md-water"></i></button>
         <button data-digit="9"><i class="icon ion-ios-happy"></i></button>
-        <button class="btn-delete">delete</button><br>
+        <button class="delete">delete</button><br>
       </div>
       <label for="location-select">Location</label> <input id="location-select" type="button" value="Allow to use your location"> <input id="location" type="text"><br>
       <button id="submit" type="submit">Submit</button><br>
@@ -199,14 +199,15 @@
           let cp= parseInt(hex, 16); // the 16 is not actually necessary when using hex formatted as 0xABCD
           return String.fromCodePoint(cp);
         }
-        let input = document.querySelector('#code');
-        let buttons = document.querySelectorAll('#keypad button');
-        buttons.forEach(el => {
+        const input = document.querySelector('#code');
+        const digitButtons = document.querySelectorAll('#keypad button[data-digit]');
+        const deleteButton = document.querySelector('#keypad button.delete');
+        digitButtons.forEach(el => {
           el.addEventListener('click', e => {
             input.value += characterForDigit(el.dataset.digit);
           });
         });
-        document.querySelector('#keypad .btn-delete').addEventListener('click', e => {
+        deleteButton.addEventListener('click', e => {
           input.value = input.value.slice(0, -1);
         });
       })();
