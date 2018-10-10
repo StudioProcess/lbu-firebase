@@ -91,23 +91,23 @@ exports.cleanup = functions.https.onRequest((req, res) => {
 exports.updateCount = functions.firestore
   .document('uploads/{uploadId}')
   .onWrite( (change, context) => {
-    
     let increment = 0;
+    let operation = ''; // for debug output only
     if (!change.after.exists) {
       // doc was deleted
-      console.log('delete');
+      operation = 'delete';
       if (change.before.data().photoUpload === 'DONE') {
         increment = -1;
       }
     } else if (!change.before.exists) {
       // doc was created
-      console.log('create');
+      operation = 'create';
       if (change.after.data().photoUpload === 'DONE') {
         increment = 1;
       }
     } else {
       // doc was updated
-      console.log('update');
+      operation = 'update';
       const before = change.before.data().photoUpload;
       const after = change.after.data().photoUpload;
       if (before !== 'DONE' && after === 'DONE') { // it's done now
@@ -116,14 +116,17 @@ exports.updateCount = functions.firestore
         increment = -1;
       }
     }
-    console.log('increment: ' + increment);
-    if (increment === 0) return null;
+
+    if (increment === 0) {
+      console.log(`operation: ${operation}, increment: ${increment}`);
+      return null;
+    }
     
     const stats = firestore.doc('_/stats');
     return firestore.runTransaction(transaction => {
       return transaction.get(stats).then(doc => {
         if (!doc.exists) {
-          throw 'Document does not exist!';
+          throw { code:'STATS_DOC_MISSING' };
         }
         let oldCount = doc.data().uploadCount;
         let newCount = oldCount ? oldCount + increment : increment;
@@ -131,9 +134,10 @@ exports.updateCount = functions.firestore
         return newCount;
       });
     }).then( newCount => {
-      console.log(`uploadCount updated: ${newCount}`);
+      console.log(`operation: ${operation}, increment: ${increment}, uploadCount: ${newCount}`);
       return null;
     }).catch( err => {
       console.error(err);
+      return null;
     });
   });
