@@ -8,7 +8,13 @@ const firestore = admin.firestore();
 firestore.settings({ timestampsInSnapshots:true });
 
 
-// Triggered when an object is uploaded to cloud storage
+
+/**
+ * Function: checkUpload
+ * Trigger:  Cloud Storage, object finalize
+ * Checks photos uploaded to cloud storage (there needs to be a corresponding doc)
+ * then updates the doc with the upload data.
+ */
 exports.checkUpload = functions.storage.object().onFinalize( (object, context) => {
   // const fileBucket = object.bucket; // The Storage bucket that contains the file.
   // const contentType = object.contentType; // File content type.
@@ -36,12 +42,18 @@ exports.checkUpload = functions.storage.object().onFinalize( (object, context) =
 });
 
 
+
+/**
+ * Function: cleanup
+ * Trigger:  Cloud HTTPS Request
+ * Deletes pending upload docs that are older than a certain time.
+ * This is run periodically as a cron job.
+ */
 const crypto = require('crypto');
 const PromisePool = require('es6-promise-pool').PromisePool;
 const UPLOAD_TIMEOUT = 3600 * 1000; // [ms]
 const MAX_CONCURRENT = 3;
 
-// Triggered via HTTP request
 exports.cleanup = functions.https.onRequest((req, res) => {
   const req_key = req.query.key || '';
   const key = (functions.config().cron && functions.config().cron.key) || '';
@@ -87,7 +99,12 @@ exports.cleanup = functions.https.onRequest((req, res) => {
 });
 
 
-// Triggered on writes (create, update, delete) to the uploads collection
+
+/**
+ * Function: updateCount
+ * Trigger:  Cloud Firestore, on write (create, update, delete) to uploads collection
+ * Maintains a counter of sucessful uploads (_/stats/uploadCount).
+ */
 exports.updateCount = functions.firestore
   .document('uploads/{uploadId}')
   .onWrite( (change, context) => {
