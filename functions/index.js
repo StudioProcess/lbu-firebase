@@ -4,11 +4,11 @@ const functions = require('firebase-functions');
 const path = require('path');
 const admin = require('firebase-admin');
 admin.initializeApp();
-
 const firestore = admin.firestore();
 firestore.settings({ timestampsInSnapshots:true });
 
 
+// Triggered when an object is uploaded to cloud storage
 exports.checkUpload = functions.storage.object().onFinalize( (object, context) => {
   // const fileBucket = object.bucket; // The Storage bucket that contains the file.
   // const contentType = object.contentType; // File content type.
@@ -41,6 +41,7 @@ const PromisePool = require('es6-promise-pool').PromisePool;
 const UPLOAD_TIMEOUT = 3600 * 1000; // [ms]
 const MAX_CONCURRENT = 3;
 
+// Triggered via HTTP request
 exports.cleanup = functions.https.onRequest((req, res) => {
   const req_key = req.query.key || '';
   const key = (functions.config().cron && functions.config().cron.key) || '';
@@ -84,3 +85,55 @@ exports.cleanup = functions.https.onRequest((req, res) => {
     return null;
   });
 });
+
+
+// Triggered on writes (create, update, delete) to the uploads collection
+exports.updateCount = functions.firestore
+  .document('uploads/{uploadId}')
+  .onWrite( (change, context) => {
+    
+    let increment = 0;
+    if (!change.after.exists) {
+      // doc was deleted
+      console.log('delete');
+      if (change.before.data().photoUpload === 'DONE') {
+        increment = -1;
+      }
+    } else if (!change.before.exists) {
+      // doc was created
+      console.log('create');
+      if (change.after.data().photoUpload === 'DONE') {
+        increment = 1;
+      }
+    } else {
+      // doc was updated
+      console.log('update');
+      const before = change.before.data().photoUpload;
+      const after = change.after.data().photoUpload;
+      if (before !== 'DONE' && after === 'DONE') { // it's done now
+        increment = 1;
+      } else if (before === 'DONE' && after !== 'DONE') { // not done anymore
+        increment = -1;
+      }
+    }
+    console.log('increment: ' + increment);
+    if (increment === 0) return null;
+    
+    const stats = firestore.doc('_/stats');
+    return firestore.runTransaction(transaction => {
+      return transaction.get(stats).then(doc => {
+        if (!doc.exists) {
+          throw 'Document does not exist!';
+        }
+        let oldCount = doc.data().uploadCount;
+        let newCount = oldCount ? oldCount + increment : increment;
+        transaction.update(stats, {uploadCount: newCount});
+        return newCount;
+      });
+    }).then( newCount => {
+      console.log(`uploadCount updated: ${newCount}`);
+      return null;
+    }).catch( err => {
+      console.error(err);
+    });
+  });

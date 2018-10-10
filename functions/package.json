@@ -11,6 +11,7 @@
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
     "deploy:cleanup": "firebase deploy --only functions:cleanup",
+    "deploy:updateCount": "firebase deploy --only functions:updateCount",
     "logs": "firebase functions:log"
   },
   "dependencies": {
