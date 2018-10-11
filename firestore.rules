@@ -1,7 +1,22 @@
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write;
+    
+    match /uploads/{upload} {
+      allow create: 
+      	if exists(/databases/$(database)/documents/codes/$(request.resource.data.code)) 
+        && request.resource.data.photoUpload == 'PENDING';
+      
+      allow get;
     }
+    
+    // Uncomment to allow uploading new codes:
+    // match /codes/{doc} {
+    // 	allow write;
+    // }
+    
+    match /_/stats {
+    	allow get;
+    }
+    
   }
 }
