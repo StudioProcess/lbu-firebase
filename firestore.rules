@@ -1,10 +1,17 @@
+// Tests if a requests data object has exactly the provided keys
+function dataKeysAre(fields) {
+  return request.resource.data.keys().hasAll(fields)
+    && request.resource.data.keys().hasOnly(fields); // not what the name hasOnly() suggests. true when all keys() are in fields
+}
+
 service cloud.firestore {
   match /databases/{database}/documents {
     
     match /uploads/{upload} {
       allow create: 
-      	if exists(/databases/$(database)/documents/codes/$(request.resource.data.code)) 
-        && request.resource.data.photoUpload == 'PENDING';
+        if dataKeysAre(['code', 'message', 'photoUpload', 'photoMetadata', 'location', 'timestamp', 'clientTimestamp'])
+      	&& request.resource.data.photoUpload == 'PENDING'
+        && exists( /databases/$(database)/documents/codes/$(request.resource.data.code) );
       
       allow get;
     }
