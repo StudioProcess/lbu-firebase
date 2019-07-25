@@ -41,6 +41,10 @@
       uploadCount: <span id="uploadCount"></span>
     </div>
     
+    <div>
+      populationClock: <span id="populationClock"></span>
+    </div>
+    
     <div id="form">
       <!-- <label for="name">Name</label> <input id="name" placeholder="Name"><br> -->
       <label for="photo">Photo</label> <input id="photo" type="file" accept="image/*"><br>
@@ -237,6 +241,20 @@
             console.log("error getting geolocation", err);
           }, {enableHighAccuracy:false});
         });
+      })();
+      
+      // Population clock
+      (function populationClock() {
+        const start = 7714100000;
+        const persecond = 2.62;
+        const date = new Date('2019-07-05');
+        const interval = 1000;
+        const el = document.querySelector('#populationClock')
+        setInterval(() => {
+          let diff = Math.round( (new Date() - date)/1000 ) + 1;
+          let result = Math.round( diff * persecond + start );
+          el.textContent = Number(result).toLocaleString('de');
+        }, interval);
       })();
   </script>
   
