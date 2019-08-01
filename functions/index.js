@@ -24,8 +24,8 @@ exports.checkUpload = functions.storage.object().onFinalize( (object, context) =
   const id = path.dirname(filePath); // Upload ID e.g. 'uD6FpMVaX9YbGYt4vuWJ'
   
   // Check in Firestore: There needs to be a doc with that id and pending upload
-  const doc = firestore.collection('uploads').doc(id);
-  return doc.get().then(doc => {
+  const ref = firestore.collection('uploads').doc(id);
+  return ref.get().then(doc => {
     // Check upload status
     if (doc.data().photoUpload !== 'PENDING') throw { code:'NOT_PENDING' };
     console.log(doc.id, doc.data());
@@ -35,13 +35,27 @@ exports.checkUpload = functions.storage.object().onFinalize( (object, context) =
       photoId: object.id,
       photoName: object.name
     });
+    // .then(() => {
+    //   return updateDotStreams(doc);
+    // });
   }).catch(err => {
     // Fails the Promise if the document is not found.
     console.error(err);
   });
 });
 
-
+/*
+ * Once a new upload is complete, update dot data with it
+ */
+// function updateDotStreams(uploadDoc) {
+//   // look up dot number from code
+//   const code = uploadDoc.data().code;
+//   return firestore.collection('codes').doc(code).get().then(doc => {
+//     const num = doc.data().number;
+//     console.log(`update dot ${num}`);
+//     return firestore.doc(`dots/${num}/stream/${uploadDoc.id}`).set(uploadDoc.data())
+//   });
+// }
 
 /**
  * Function: cleanup
