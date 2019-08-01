@@ -15,7 +15,7 @@ firestore.settings({ timestampsInSnapshots:true });
  * Checks photos uploaded to cloud storage (there needs to be a corresponding doc)
  * then updates the doc with the upload data.
  */
-exports.checkUpload = functions.storage.object().onFinalize( (object, context) => {
+exports.checkUpload = functions.storage.object().onFinalize( async (object, _context) => {
   // const fileBucket = object.bucket; // The Storage bucket that contains the file.
   // const contentType = object.contentType; // File content type.
   // const metageneration = object.metageneration; // Number of times metadata has been generated. New objects have a value of 1.
@@ -25,7 +25,9 @@ exports.checkUpload = functions.storage.object().onFinalize( (object, context) =
   
   // Check in Firestore: There needs to be a doc with that id and pending upload
   const ref = firestore.collection('uploads').doc(id);
-  return ref.get().then(doc => {
+  
+  try {
+    const doc = await ref.get();
     // Check upload status
     if (doc.data().photoUpload !== 'PENDING') throw { code:'NOT_PENDING' };
     console.log(doc.id, doc.data());
@@ -35,27 +37,14 @@ exports.checkUpload = functions.storage.object().onFinalize( (object, context) =
       photoId: object.id,
       photoName: object.name
     });
-    // .then(() => {
-    //   return updateDotStreams(doc);
-    // });
-  }).catch(err => {
-    // Fails the Promise if the document is not found.
+    // return updateStreams(doc);
+  } catch (err) {
+    // Rejects the Promise if the document is not found.
     console.error(err);
-  });
+    throw err;
+  }
 });
 
-/*
- * Once a new upload is complete, update dot data with it
- */
-// function updateDotStreams(uploadDoc) {
-//   // look up dot number from code
-//   const code = uploadDoc.data().code;
-//   return firestore.collection('codes').doc(code).get().then(doc => {
-//     const num = doc.data().number;
-//     console.log(`update dot ${num}`);
-//     return firestore.doc(`dots/${num}/stream/${uploadDoc.id}`).set(uploadDoc.data())
-//   });
-// }
 
 /**
  * Function: cleanup
