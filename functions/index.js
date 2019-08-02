@@ -56,6 +56,7 @@ async function updateStreams(data) {
   return streamsDoc.update({
     [`integrated.${dotIdx}`]: integrated,
     [`last.${dotIdx}`]: last,
+    "updated": dotIdx,
   });
 }
 
