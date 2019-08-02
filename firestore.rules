@@ -10,7 +10,7 @@ service cloud.firestore {
     match /uploads/{upload} {
       allow create: 
         if dataKeysAre(['code', 'message', 'photoUpload', 'photoMetadata', 'location', 'timestamp', 'clientTimestamp'])
-      	&& request.resource.data.photoUpload == 'PENDING'
+        && request.resource.data.photoUpload == 'PENDING'
         && exists( /databases/$(database)/documents/codes/$(request.resource.data.code) );
       
       allow get;
@@ -22,7 +22,11 @@ service cloud.firestore {
     // }
     
     match /_/stats {
-    	allow get;
+      allow get;
+    }
+    
+    match /_/streams {
+      allow get;
     }
     
   }

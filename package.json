@@ -5,7 +5,8 @@
   "main": "",
   "scripts": {
     "start": "firebase serve --port 8080",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy:rules": "firebase deploy --only firestore:rules"
   },
   "author": "Process Studio <contact@process.studio> (https://process.studio)",
   "license": "AGPL-3.0",
