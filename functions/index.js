@@ -9,6 +9,16 @@ firestore.settings({ timestampsInSnapshots:true });
 
 
 
+/*
+ * Resolve upload code to dot number
+ */
+async function resolveUploadCode(code) {
+  const snap = await firestore.collection('codes').doc(code).get();
+  const num = snap.data().number;
+  return num;
+}
+
+
 /**
  * Function: checkUpload
  * Trigger:  Cloud Storage, object finalize
@@ -24,20 +34,23 @@ exports.checkUpload = functions.storage.object().onFinalize( async (object, _con
   const id = path.dirname(filePath); // Upload ID e.g. 'uD6FpMVaX9YbGYt4vuWJ'
   
   // Check in Firestore: There needs to be a doc with that id and pending upload
-  const ref = firestore.collection('uploads').doc(id);
+  const ref = firestore.collection('uploads').doc(id); // DocumentReference
   
   try {
-    const doc = await ref.get();
+    const snap = await ref.get(); // DocumentSnapshot
     // Check upload status
-    if (doc.data().photoUpload !== 'PENDING') throw { code:'NOT_PENDING' };
-    console.log(doc.id, doc.data());
-    return doc.ref.update({
+    if (snap.data().photoUpload !== 'PENDING') throw { code:'NOT_PENDING' };
+    console.log(snap.id, snap.data());
+    const dotNum = await resolveUploadCode( snap.data().code );
+
+    return ref.update({
       photoUpload: 'DONE',
       photoURL: object.mediaLink,
       photoId: object.id,
-      photoName: object.name
+      photoName: object.name,
+      dotNum: dotNum
     });
-    // return updateStreams(doc);
+    // return updateStreams(snap);
   } catch (err) {
     // Rejects the Promise if the document is not found.
     console.error(err);
@@ -100,7 +113,6 @@ exports.cleanup = functions.https.onRequest((req, res) => {
     return null;
   });
 });
-
 
 
 /**
