@@ -45,6 +45,10 @@
       populationClock: <span id="populationClock"></span>
     </div>
     
+    <div>
+      streams: <textarea id="streams"></textarea></br>
+    </div>
+    
     <div id="form">
       <!-- <label for="name">Name</label> <input id="name" placeholder="Name"><br> -->
       <label for="photo">Photo</label> <input id="photo" type="file" accept="image/*"><br>
@@ -256,6 +260,14 @@
           el.textContent = Number(result).toLocaleString('de');
         }, interval);
       })();
+      
+      // Live Data
+      document.addEventListener('DOMContentLoaded', () => {
+        db.doc('_/streams').onSnapshot(snap => {
+          let streams = snap.data();
+          document.querySelector('#streams').value = JSON.stringify(streams, null, 2);
+        });
+      });
   </script>
   
   <!-- <script>
