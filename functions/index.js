@@ -45,13 +45,13 @@ async function updateStreams(data) {
   
   const dotIdx = String(data.dotNum).padStart(3, '0');
   let integrated = streams.integrated[dotIdx] || [];
-  const last = streams.last[dotIdx] || [];
+  let last = streams.last[dotIdx] || [];
   
   integrated.push( data.lat, data.lng );
   integrated = simplifyArray(integrated)
   
   last.unshift( data.lat, data.lng, data.ts );
-  if (last.length > KEEP_LAST*3) last.slice(0, KEEP_LAST*3);
+  if (last.length > KEEP_LAST*3) last = last.slice(0, KEEP_LAST*3);
   
   return streamsDoc.update({
     [`integrated.${dotIdx}`]: integrated,
