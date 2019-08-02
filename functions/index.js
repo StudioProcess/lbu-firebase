@@ -1,5 +1,8 @@
 'use strict';
 
+const SIMPLIFY_TOLERANCE = 0.5;
+const KEEP_LAST = 10;
+
 const functions = require('firebase-functions');
 const path = require('path');
 const admin = require('firebase-admin');
@@ -18,6 +21,43 @@ async function resolveUploadCode(code) {
   return num;
 }
 
+/*
+ * Simplify flat array of x/y coordinates. e.g.: [x0, y0, x1, y1, ...]
+ */
+const simplify = require('simplify-js');
+
+function simplifyArray(arr) {
+  let tmp = [];
+  for (let i=0; i<arr.length-1; i+=2) {
+    tmp.push({ x:arr[0], y:arr[1] });
+  }
+  tmp = simplify(tmp, SIMPLIFY_TOLERANCE);
+  return tmp.reduce((acc, val) => acc.concat(val.x, val.y), []);
+}
+
+/*
+ * Once a new upload is complete, update dot document with it
+ */
+async function updateStreams(data) {
+  const streamsDoc = firestore.collection('_').doc('streams');
+  const streamsSnap = await streamsDoc.get();
+  const streams = streamsSnap.data();
+  
+  const dotIdx = String(data.dotNum).padStart(3, '0');
+  let integrated = streams.integrated[dotIdx] || [];
+  const last = streams.last[dotIdx] || [];
+  
+  integrated.push( data.lat, data.lng );
+  integrated = simplifyArray(integrated)
+  
+  last.unshift( data.lat, data.lng, data.ts );
+  if (last.length > KEEP_LAST*3) last.slice(0, KEEP_LAST*3);
+  
+  return streamsDoc.update({
+    [`integrated.${dotIdx}`]: integrated,
+    [`last.${dotIdx}`]: last,
+  });
+}
 
 /**
  * Function: checkUpload
@@ -65,36 +105,6 @@ exports.checkUpload = functions.storage.object().onFinalize( async (object, _con
   }
 });
 
-
-/*
- * Once a new upload is complete, update dot data with it
- */
-// const simplify = require('simplify-js');
-
-async function updateStreams(data) {
-  const streamsDoc = firestore.collection('_').doc('streams');
-  const streamsSnap = await streamsDoc.get();
-  const streams = streamsSnap.data();
-  
-  const dotIdx = String(data.dotNum).padStart(3, '0');
-  const integrated = streams.integrated[dotIdx] || [];
-  const last = streams.last[dotIdx] || [];
-  
-  integrated.push( data.lat, data.lng );
-  
-  const lastCount = 10;
-  last.unshift( data.lat, data.lng, data.ts );
-  if (last.length > lastCount*3) last.slice(0, lastCount*3);
-  
-  // streams.integrated[dotIdx] = integrated;
-  // streams.last[dotIdx] = last;
-  // console.log(JSON.stringify(streams));
-  
-  return streamsDoc.update({
-    [`integrated.${dotIdx}`]: integrated,
-    [`last.${dotIdx}`]: last,
-  });
-}
 
 
 /**
