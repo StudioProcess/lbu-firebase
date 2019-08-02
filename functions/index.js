@@ -42,7 +42,14 @@ exports.checkUpload = functions.storage.object().onFinalize( async (object, _con
     if (snap.data().photoUpload !== 'PENDING') throw { code:'NOT_PENDING' };
     console.log(snap.id, snap.data());
     const dotNum = await resolveUploadCode( snap.data().code );
-
+    
+    await updateStreams({
+      dotNum,
+      lat: snap.data().location.coords.latitude,
+      lng: snap.data().location.coords.longitude,
+      ts:  snap.data().timestamp.toMillis()
+    });
+    
     return ref.update({
       photoUpload: 'DONE',
       photoURL: object.mediaLink,
@@ -50,13 +57,44 @@ exports.checkUpload = functions.storage.object().onFinalize( async (object, _con
       photoName: object.name,
       dotNum: dotNum
     });
-    // return updateStreams(snap);
+
   } catch (err) {
     // Rejects the Promise if the document is not found.
     console.error(err);
     throw err;
   }
 });
+
+
+/*
+ * Once a new upload is complete, update dot data with it
+ */
+// const simplify = require('simplify-js');
+
+async function updateStreams(data) {
+  const streamsDoc = firestore.collection('_').doc('streams');
+  const streamsSnap = await streamsDoc.get();
+  const streams = streamsSnap.data();
+  
+  const dotIdx = String(data.dotNum).padStart(3, '0');
+  const integrated = streams.integrated[dotIdx] || [];
+  const last = streams.last[dotIdx] || [];
+  
+  integrated.push( data.lat, data.lng );
+  
+  const lastCount = 10;
+  last.unshift( data.lat, data.lng, data.ts );
+  if (last.length > lastCount*3) last.slice(0, lastCount*3);
+  
+  // streams.integrated[dotIdx] = integrated;
+  // streams.last[dotIdx] = last;
+  // console.log(JSON.stringify(streams));
+  
+  return streamsDoc.update({
+    [`integrated.${dotIdx}`]: integrated,
+    [`last.${dotIdx}`]: last,
+  });
+}
 
 
 /**
