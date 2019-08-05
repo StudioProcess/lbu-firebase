@@ -68,11 +68,14 @@ export function setupPopCounter(opts) {
   const interval = opts.interval;
   const el = document.querySelector(opts.selector)
   
-  setInterval(() => {
+  function update() {
     let diff = Math.round( (new Date() - date)/1000 ) + 1;
     let result = Math.round( diff * persecond + start );
     el.textContent = Number(result).toLocaleString('de');
-  }, interval);
+  }
+  
+  setInterval(update, interval);
+  update();
 }
 
 
