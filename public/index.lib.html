@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Let's build utopia</title>
+    
+    <link href="https://unpkg.com/ionicons@4.5.10-0/dist/css/ionicons.min.css" rel="stylesheet">
+
+    <!-- update the version number as needed -->
+    <!-- <script defer src="/__/firebase/6.3.4/firebase-app.js"></script> -->
+    <!-- include only the Firebase features as you need -->
+    <!-- <script defer src="/__/firebase/6.3.4/firebase-auth.js"></script>
+    <script defer src="/__/firebase/6.3.4/firebase-database.js"></script>
+    <script defer src="/__/firebase/6.3.4/firebase-messaging.js"></script>
+    <script defer src="/__/firebase/6.3.4/firebase-storage.js"></script> -->
+    <!-- initialize the SDK after all desired features are loaded -->
+    <!-- <script defer src="/__/firebase/init.js"></script> -->
+
+    <style media="screen">
+      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
+      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
+      @media (max-width: 600px) {
+        body { margin-top: 0; background: white; box-shadow: none; }
+        body { border-top: 16px solid #ffa100; }
+      }
+      #load { display:none; }
+    </style>
+    
+    <style>
+      #code { font-family:"Ionicons",system-ui; letter-spacing:0.2em; }
+      #photo-display img:not([src]) { display:none; }
+      #photo-display img { max-height:100px; width:auto; }
+    </style>
+  </head>
+  
+  <body>
+    <p id="load">Firebase SDK Loading&hellip;</p>
+    
+    <div>
+      uploadCount: <span id="uploadCount"></span>
+    </div>
+    
+    <div>
+      populationClock: <span id="populationClock"></span>
+    </div>
+    
+    <div>
+      streams: <textarea id="streams"></textarea></br>
+    </div>
+    
+    <div id="form">
+      <!-- <label for="name">Name</label> <input id="name" placeholder="Name"><br> -->
+      <label for="photo">Photo</label> <input id="photo" type="file" accept="image/*"><br>
+      <div id="photo-display"><img></div>
+      <label for="name">Message (optional)</label> <input id="message" placeholder="Message (optional)"><br>
+      <label for="code">Code</label> <input id="code" placeholder="Code"><br>
+      <div id="keypad">
+        <button data-digit="0"><i class="icon ion-md-heart"></i></button>
+        <button data-digit="1"><i class="icon ion-ios-moon"></i></button>
+        <button data-digit="2"><i class="icon ion-md-flower"></i></button>
+        <button data-digit="3"><i class="icon ion-ios-star"></i></button>
+        <button data-digit="4"><i class="icon ion-ios-sunny"></i></button>
+        <button data-digit="5"><i class="icon ion-md-play"></i></button>
+        <button data-digit="6"><i class="icon ion-md-cloud"></i></button>
+        <button data-digit="7"><i class="icon ion-ios-square"></i></button>
+        <button data-digit="8"><i class="icon ion-md-water"></i></button>
+        <button data-digit="9"><i class="icon ion-ios-happy"></i></button>
+        <button class="delete">delete</button><br>
+      </div>
+      <label for="location-select">Location</label> <input id="location-select" type="button" value="Allow to use your location"> <input id="location" type="text"><br>
+      <button id="submit" type="submit">Submit</button><br>
+    </div>
+    
+    <!-- Firebase App is always required and must be first -->
+    <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-app.js"></script>
+    <!-- Add additional services that you want to use -->
+    <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-storage.js"></script>
+    <!-- <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-functions.js"></script> -->
+
+    <script type='module'>
+      import * as lbu from './lbu.js';
+      const config = {
+        apiKey: "AIzaSyCdr0kpTbsED6du_p-RulO_m4L7aglFoio",
+        projectId: "letsbuildutopia-84770",
+        storageBucket: "letsbuildutopia-84770.appspot.com",
+      };
+      lbu.init(config);
+      
+      lbu.setupCodeEntry({
+        code_input: '#code',
+        digit_buttons: '#keypad button[data-digit]',
+        delete_button: '#keypad button.delete'
+      });
+      
+      lbu.setupPopCounter({
+        selector: '#populationClock',
+        interval: 1000,
+      });
+      
+      lbu.setupUploadCounter({
+        selector: '#uploadCount',
+      });
+      
+      lbu.onData(data => {
+        document.querySelector('#streams').value = JSON.stringify(data, null, 2);
+      });
+      
+      document.querySelector('#submit').addEventListener('click', e => {
+        lbu.upload({
+          file: document.querySelector('#photo').files[0],
+          code: document.querySelector('#code').value,
+          progress: (status) => {
+            console.log('PROGRESS', status);
+          }
+        }).then(() => {
+          console.log('UPLOAD SUCCESS');
+        })
+      });
+      
+  </script>
+  
+  <!-- <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+      // // The Firebase SDK is initialized and available here!
+      //
+      // firebase.auth().onAuthStateChanged(user => { });
+      // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
+      // firebase.messaging().requestPermission().then(() => { });
+      // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
+      //
+      // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+
+      try {
+        let app = firebase.app();
+        let features = ['auth', 'database', 'messaging', 'storage'].filter(feature => typeof app[feature] === 'function');
+        document.getElementById('load').innerHTML = `Firebase SDK loaded with ${features.join(', ')}`;
+      } catch (e) {
+        console.error(e);
+        document.getElementById('load').innerHTML = 'Error loading the Firebase SDK, check the console.';
+      }
+    });
+  </script> -->
+  
+  </body>
+</html>
