@@ -163,49 +163,80 @@ function getFileMetadata(file) {
 
 // Handle Upload
 // 
-// file:     File (https://developer.mozilla.org/en-US/docs/Web/API/File) 
-// code:     eg. '0_0_0_0_0_0'
-// message:  String (optional)
-// progress: callback function
-// Returns:  Promise
-// Errors:   
+// file:       File (https://developer.mozilla.org/en-US/docs/Web/API/File) 
+// code:       String eg. '0_0_0_0_0_0', or Ionicon symbols 
+// message:    String (optional)
+// onProgress: callback function, called with { bytesTransferred, totalBytes }
+// onLocation: callback function, called with { latitude, longitude, accuracy, timestamp }
+// geolocationOptions: https://developer.mozilla.org/en-US/docs/Web/API/PositionOptions
+// Returns:    Promise, resolves with {docRef, storageRef, uploadTaskSnap}
+// Errors:
+//   { name:'MissingFile',            message:'No file provided' }
+//   { name:'InvalidFileParameter',   message:'Invalid file parameter' }
+//   { name:'InvalidFileType',        message:'Invalid file type. Please select PNG, JPEG or WEBP' }
+//   { name:'InvalidCodeFormat',      message:'Invalid code format' }
+//   { name:'GeolocationUnsupported', message:'Geolocation feature unsupported in browser' }
+//   { name:'GeolocationDenied',      message:'Geolocation denied by user or browser settings' }
+//   { name:'GeolocationUnavailable', message:'Geolocation (temporarily) unavailable' }
+//   { name:'GeolocationTimeout',     message:'Geolocation timeout' }
+//   { name:'InvalidCode',            message:'Invalid upload code provided' }
+//   { name:'UploadError',            message: 'Error while uploading file', errorObject }
 export async function upload(opts) {
   const defaults = {
     file: '',
     message: '',
     code: '',
-    progress: null,
+    onProgress: null,
+    onLocation: null,
+    geolocationOptions: undefined,
   };
   opts = Object.assign({}, defaults, opts);
   
+  // Check geolocation browser support
+  if (!geolocationSupported()) {
+    throw { name:'GeolocationUnsupported', message:'Geolocation feature unsupported in browser' }
+  }
+  
   // Check file
   if ( !opts.file ) {
-    throw { message:'No file provided', name:'MissingFile' }
+    throw { name:'MissingFile', message:'No file provided' }
   }
   if ( typeof opts.file != 'object' || !(opts.file instanceof File) ) {
-    throw { message:'Invalid file parameter', name:'InvalidFileParameter' };
+    throw { name:'InvalidFileParameter', message:'Invalid file parameter' };
   }
   if ( !['image/png', 'image/jpeg', 'image/webp'].includes(opts.file.type) ) {
-    throw { message:'Invalid file type. Please select PNG, JPEG or WEBP', name:'InvalidFileType' };
+    throw { name:'InvalidFileType', message:'Invalid file type. Please select PNG, JPEG or WEBP' };
   }
   
   // Check code
   if ( opts.code == '' ) {
-    throw { message:'No code provided', name:'MissingCode' }
+    throw { name:'MissingCode', message:'No upload code provided' };
   }
   if ( !checkCodeFormat(opts.code) ) { // try converting from icons once
     opts.code = iconsToCode(opts.code)
   }
   if ( !checkCodeFormat(opts.code) ) {
-    throw { message:'Invalid code format', name:'InvalidCodeFormat' }
+    throw { name:'InvalidCodeFormat', message:'Invalid code format' };
   }
   
   // Request Location
-  //  Throws PositionError (https://developer.mozilla.org/en-US/docs/Web/API/PositionError)
-  //  code: 1 .. PERMISSION_DENIED, 2 .. POSITION_UNAVAILABLE, 3 .. TIMEOUT
-  let loc = await getLocation();
-  // console.log(loc);
+  let loc;
+  try {
+    //  Throws PositionError (https://developer.mozilla.org/en-US/docs/Web/API/PositionError)
+    //  code: 1 .. PERMISSION_DENIED, 2 .. POSITION_UNAVAILABLE, 3 .. TIMEOUT
+    loc = await getLocation(opts.geolocationOptions);
+    if (opts.onLocation instanceof Function) {
+      opts.onLocation(loc);
+    }
+    // console.log(loc);
+  } catch (e) {
+    if (e.code == 1) throw { name:'GeolocationDenied', message:'Geolocation denied by user or browser settings' };
+    if (e.code == 2) throw { name:'GeolocationUnavailable', message:'Geolocation (temporarily) unavailable' };
+    if (e.code == 3) throw { name:'GeolocationTimeout', message:'Geolocation timeout' };
+    throw e;
+  }
   
+  // Upload Data
   let request = {
     message: opts.message,
     photoMetadata: getFileMetadata(opts.file),
@@ -216,26 +247,37 @@ export async function upload(opts) {
     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
   };
   // console.log(request);
-  
   let docRef;
   try {
     docRef = await db.collection('uploads').add(request);
   } catch (e) {
     if (e.code == 'permission-denied') {
-      throw { message:'Invalid upload code provided', name:'InvalidCode' }
+      throw { name:'InvalidCode', message:'Invalid upload code provided' };
     }
     throw e;
   }
   
+  // Upload File
   const storageRef = storage.ref(`${docRef.id}/${request.photoMetadata.name}`);
-  const uploadTask = storageRef.put(opts.file);
-  if (opts.progress instanceof Function) {
-    uploadTask.on(firebase.storage.TaskEvent.STATE_CHANGED, {
-      'next': snapshot => opts.progress({
-        totalBytes: snapshot.totalBytes,
-        bytesTransferred: snapshot.bytesTransferred
-      })
-    });
+  let uploadTaskSnap;
+  try {
+    const uploadTask = storageRef.put(opts.file);
+    if (opts.onProgress instanceof Function) {
+      uploadTask.on(firebase.storage.TaskEvent.STATE_CHANGED, {
+        'next': snapshot => opts.onProgress({
+          totalBytes: snapshot.totalBytes,
+          bytesTransferred: snapshot.bytesTransferred
+        })
+      });
+    }
+    uploadTaskSnap = await uploadTask;
+  } catch (e) {
+    throw { name:'UploadError', message: 'Error while uploading file', errorObject:e };
   }
-  return uploadTask;
+  
+  return {
+    docRef,
+    storageRef,
+    uploadTaskSnap
+  }
 }

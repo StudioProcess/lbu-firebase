@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Let's build utopia</title>
+    
+    <link href="https://unpkg.com/ionicons@4.5.10-0/dist/css/ionicons.min.css" rel="stylesheet">
+
+    <!-- update the version number as needed -->
+    <!-- <script defer src="/__/firebase/6.3.4/firebase-app.js"></script> -->
+    <!-- include only the Firebase features as you need -->
+    <!-- <script defer src="/__/firebase/6.3.4/firebase-auth.js"></script>
+    <script defer src="/__/firebase/6.3.4/firebase-database.js"></script>
+    <script defer src="/__/firebase/6.3.4/firebase-messaging.js"></script>
+    <script defer src="/__/firebase/6.3.4/firebase-storage.js"></script> -->
+    <!-- initialize the SDK after all desired features are loaded -->
+    <!-- <script defer src="/__/firebase/init.js"></script> -->
+
+    <style media="screen">
+      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
+      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
+      @media (max-width: 600px) {
+        body { margin-top: 0; background: white; box-shadow: none; }
+        body { border-top: 16px solid #ffa100; }
+      }
+      #load { display:none; }
+    </style>
+    
+    <style>
+      #code { font-family:"Ionicons",system-ui; letter-spacing:0.2em; }
+      #photo-display img:not([src]) { display:none; }
+      #photo-display img { max-height:100px; width:auto; }
+    </style>
+  </head>
+  
+  <body>
+    <p id="load">Firebase SDK Loading&hellip;</p>
+    
+    <div>
+      uploadCount: <span id="uploadCount"></span>
+    </div>
+    
+    <div>
+      populationClock: <span id="populationClock"></span>
+    </div>
+    
+    <div>
+      streams: <textarea id="streams"></textarea></br>
+    </div>
+    
+    <div id="form">
+      <!-- <label for="name">Name</label> <input id="name" placeholder="Name"><br> -->
+      <label for="photo">Photo</label> <input id="photo" type="file" accept="image/*"><br>
+      <div id="photo-display"><img></div>
+      <label for="name">Message (optional)</label> <input id="message" placeholder="Message (optional)"><br>
+      <label for="code">Code</label> <input id="code" placeholder="Code"><br>
+      <div id="keypad">
+        <button data-digit="0"><i class="icon ion-md-heart"></i></button>
+        <button data-digit="1"><i class="icon ion-ios-moon"></i></button>
+        <button data-digit="2"><i class="icon ion-md-flower"></i></button>
+        <button data-digit="3"><i class="icon ion-ios-star"></i></button>
+        <button data-digit="4"><i class="icon ion-ios-sunny"></i></button>
+        <button data-digit="5"><i class="icon ion-md-play"></i></button>
+        <button data-digit="6"><i class="icon ion-md-cloud"></i></button>
+        <button data-digit="7"><i class="icon ion-ios-square"></i></button>
+        <button data-digit="8"><i class="icon ion-md-water"></i></button>
+        <button data-digit="9"><i class="icon ion-ios-happy"></i></button>
+        <button class="delete">delete</button><br>
+      </div>
+      <label for="location-select">Location</label> <input id="location-select" type="button" value="Allow to use your location"> <input id="location" type="text"><br>
+      <button id="submit" type="submit">Submit</button><br>
+    </div>
+    
+    <!-- Firebase App is always required and must be first -->
+    <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-app.js"></script>
+    <!-- Add additional services that you want to use -->
+    <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-storage.js"></script>
+    <!-- <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-functions.js"></script> -->
+    <script>
+      // Initialize Firebase
+      const config = {
+        apiKey: "AIzaSyCdr0kpTbsED6du_p-RulO_m4L7aglFoio",
+        projectId: "letsbuildutopia-84770",
+        storageBucket: "letsbuildutopia-84770.appspot.com",
+      };
+      firebase.initializeApp(config);
+      console.info(`Firebase SDK ${firebase.SDK_VERSION}`);
+    </script>
+    
+    <script>
+      'use strict';
+      
+      const digits = {
+        0: ['md-heart', '0xf308'],
+        1: ['ios-moon', '0xf468'],
+        2: ['md-flower', '0xf2f3'],
+        3: ['ios-star', '0xf4b3'],
+        4: ['ios-sunny', '0xf4b7'],
+        5: ['md-play', '0xf357'],
+        6: ['md-cloud', '0xf2c9'],
+        7: ['ios-square', '0xf21a'],
+        8: ['md-water', '0xf3a7'],
+        9: ['ios-happy', '0xf192'],
+      };
+      
+      const db = firebase.firestore();
+      const storage = firebase.storage();
+      
+      // Submit form
+      (function() {
+        function currentFileInfo() {
+          let file = document.querySelector('#photo').files[0];
+          if (!file) { return ''; }
+          return {
+            lastModified: new Date(file.lastModified),
+            name: file.name,
+            size: file.size,
+            type: file.type,
+          };
+        }
+        
+        function digitForChar(ch) {
+          for (let e of Object.entries(digits)) {
+            let testChar = String.fromCodePoint( parseInt(e[1][1], 16) );
+            if (ch == testChar) { return e[0]; }
+          }
+          return '';
+        }
+        
+        function currentCode() {
+          let codeStr = document.querySelector('#code').value;
+          if (!codeStr) { return ''; }
+          let code = [];
+          for (let ch of codeStr) {
+            code.push( digitForChar(ch) );
+          }
+          return code.join('_');
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+          document.querySelector('#submit').addEventListener('click', e => {
+            // Assemble request data
+            let req_data = {
+              message: document.querySelector('#message').value,
+              photoMetadata: currentFileInfo(),
+              photoUpload: 'PENDING',
+              code: currentCode(),
+              location: document.querySelector('#location').data || '',
+              clientTimestamp: new Date(),
+              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            };
+            let file = document.querySelector('#photo').files[0];
+            console.log(req_data);
+            db.collection('uploads').add(req_data).then(doc => {
+              console.log('Doc written:', doc.id);
+              db.collection('uploads').doc(doc.id).onSnapshot(doc => {
+                console.log('data changed:', doc.data());
+              });
+              
+              // upload photo
+              let storageRef = storage.ref(`${doc.id}/${req_data.photoMetadata.name}`);
+              let uploadTask = storageRef.put(file);
+              uploadTask.on('state_changed', snapshot => {
+                let progress = Math.floor(snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                console.log('Uploading: ' + progress + '%');
+              }, err => {
+                console.log('Error uploading file:', err);
+              }, () => {
+                console.log('Upload successful');
+              });
+              
+            }).catch(err => {
+              console.log('Error adding doc: ', err);
+            });
+          });
+        });
+      })();
+      
+      // live upload count
+      document.addEventListener('DOMContentLoaded', () => {
+        db.doc('_/stats').onSnapshot(doc => {
+          let count = doc.data().uploadCount;
+          if (count !== undefined) {
+            document.querySelector('#uploadCount').textContent = count;
+          }
+        });
+      });
+      
+      // Code entry
+      (function() {
+        function characterForDigit(d) {
+          let hex = digits[d][1];
+          let cp= parseInt(hex, 16); // the 16 is not actually necessary when using hex formatted as 0xABCD
+          return String.fromCodePoint(cp);
+        }
+        const input = document.querySelector('#code');
+        const digitButtons = document.querySelectorAll('#keypad button[data-digit]');
+        const deleteButton = document.querySelector('#keypad button.delete');
+        digitButtons.forEach(el => {
+          el.addEventListener('click', e => {
+            input.value += characterForDigit(el.dataset.digit);
+          });
+        });
+        deleteButton.addEventListener('click', e => {
+          input.value = input.value.slice(0, -1);
+        });
+      })();
+      
+      // Photo selection
+      (function() {
+        let input = document.querySelector('#photo');
+        input.addEventListener('change', e => {
+          let file = e.target.files[0];
+          if (!file.type.startsWith('image/')){ return; }
+          let img = document.querySelector('#photo-display img');
+          let reader = new FileReader();
+          reader.onload = e => { img.src = e.target.result; };
+          reader.readAsDataURL(file);
+        });
+      })();
+      
+      // Geolocation
+      (function() {
+        if (typeof navigator.geolocation !== 'object') { return; }
+        let loc = document.querySelector('#location');
+        document.querySelector('#location-select').addEventListener('click', e => {
+          navigator.geolocation.getCurrentPosition(pos => {
+            let posdata = {
+              coords: {
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+                altitude: pos.coords.altitude,
+                accuracy: pos.coords.accuracy,
+                altitudeAccuracy: pos.coords.altitudeAccuracy,
+                heading: pos.coords.heading,
+                speed: pos.coords.speed
+              },
+              timestamp: new Date(pos.timestamp),
+            }
+            loc.data = posdata;
+            loc.value = JSON.stringify(posdata, null, 0);
+          }, err => {
+            console.log("error getting geolocation", err);
+          }, {enableHighAccuracy:false});
+        });
+      })();
+      
+      // Population clock
+      (function populationClock() {
+        const start = 7714100000;
+        const persecond = 2.62;
+        const date = new Date('2019-07-05');
+        const interval = 1000;
+        const el = document.querySelector('#populationClock')
+        setInterval(() => {
+          let diff = Math.round( (new Date() - date)/1000 ) + 1;
+          let result = Math.round( diff * persecond + start );
+          el.textContent = Number(result).toLocaleString('de');
+        }, interval);
+      })();
+      
+      // Live Data
+      document.addEventListener('DOMContentLoaded', () => {
+        db.doc('_/streams').onSnapshot(snap => {
+          let streams = snap.data();
+          document.querySelector('#streams').value = JSON.stringify(streams, null, 2);
+        });
+      });
+  </script>
+  
+  <!-- <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+      // // The Firebase SDK is initialized and available here!
+      //
+      // firebase.auth().onAuthStateChanged(user => { });
+      // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
+      // firebase.messaging().requestPermission().then(() => { });
+      // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
+      //
+      // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+
+      try {
+        let app = firebase.app();
+        let features = ['auth', 'database', 'messaging', 'storage'].filter(feature => typeof app[feature] === 'function');
+        document.getElementById('load').innerHTML = `Firebase SDK loaded with ${features.join(', ')}`;
+      } catch (e) {
+        console.error(e);
+        document.getElementById('load').innerHTML = 'Error loading the Firebase SDK, check the console.';
+      }
+    });
+  </script> -->
+  
+  </body>
+</html>
