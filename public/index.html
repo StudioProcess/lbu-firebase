@@ -98,6 +98,11 @@
       };
       lbu.init(config);
       
+      lbu.setupImageSelect({
+        input: '#photo',
+        image: '#photo-display img'
+      });
+      
       lbu.setupCodeEntry({
         code_input: '#code',
         digit_buttons: '#keypad button[data-digit]',
@@ -106,7 +111,7 @@
       
       lbu.setupPopCounter({
         selector: '#populationClock',
-        interval: 1000,
+        interval: 1000
       });
       
       lbu.setupUploadCounter({

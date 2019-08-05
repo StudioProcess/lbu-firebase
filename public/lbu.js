@@ -92,6 +92,24 @@ export function setupUploadCounter(opts) {
 }
 
 
+export function setupImageSelect(opts) {
+  const defaults = {
+    input: '#photo',
+    image: '#photo-display img'
+  }
+  opts = Object.assign({}, defaults, opts);
+  let input = document.querySelector(opts.input);
+  input.addEventListener('change', e => {
+    let file = e.target.files[0];
+    if ( !file || !file.type.startsWith('image/') ) return;
+    let img = document.querySelector(opts.image);
+    let reader = new FileReader();
+    reader.onload = e => { img.src = e.target.result; };
+    reader.readAsDataURL(file);
+  });
+}
+
+
 // Streams data
 export function onData(cb) {
   if (cb instanceof Function) {
