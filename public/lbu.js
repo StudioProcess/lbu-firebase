@@ -80,17 +80,23 @@ export function setupPopCounter(opts) {
 
 
 // Live Upload Counter
+// Returns: Promise, resolves when first count is received
 export function setupUploadCounter(opts) {
   const defaults = {
     selector: '#uploadCount'
   }
   opts = Object.assign({}, defaults, opts);
   
-  db.doc('_/stats').onSnapshot(snap => {
-    let count = snap.data().uploadCount;
-    if (count !== undefined) {
-      document.querySelector(opts.selector).textContent = count;
-    }
+  return new Promise((resolve, reject) => {
+    
+    db.doc('_/stats').onSnapshot(snap => {
+      let count = snap.data().uploadCount;
+      if (count !== undefined) {
+        document.querySelector(opts.selector).textContent = count;
+        resolve(count);
+      }
+    });
+    
   });
 }
 
@@ -115,12 +121,19 @@ export function setupImageSelect(opts) {
 
 // Streams data
 export function onData(cb) {
-  if (cb instanceof Function) {
-    db.doc('_/streams').onSnapshot(snap => {
-      let streams = snap.data();
-      cb(streams);
-    });
-  };
+  return new Promise( (resolve, reject) => {
+    
+    if (cb instanceof Function) {
+      db.doc('_/streams').onSnapshot(snap => {
+        let streams = snap.data();
+        cb(streams);
+        resolve(streams);
+      });
+    } else {
+      reject('No Callback provided');
+    }
+    
+  });
 }
 
 

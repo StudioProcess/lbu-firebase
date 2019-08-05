@@ -116,11 +116,15 @@
       
       lbu.setupUploadCounter({
         selector: '#uploadCount',
+      }).then( () => {
+        log('NOTE: upload count ready');
       });
       
       lbu.onData(data => {
         document.querySelector('#streams').value = JSON.stringify(data, null, 2);
-      });
+      }).then( () => {
+        log('NOTE: data ready');
+      })
       
       document.querySelector('#submit').addEventListener('click', e => {
         clearLog();
