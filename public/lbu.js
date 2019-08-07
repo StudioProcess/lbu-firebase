@@ -387,3 +387,38 @@ export async function sampleData(previousPoint, distance = 100) {
   // return point that's closest to desired distance
   return points[0];
 }
+
+// Generates a Random PNG Picture
+// Returns Promise { file:File, dataURL:String }
+export async function samplePic(width = 1500, height = 1000) {
+  function random(min, max) {
+    return Math.floor( min + Math.random() * (max-min) );
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = 'black';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  for (let i=0; i<3; i++) {
+    ctx.fillStyle = `hsl(${random(0,360)},80%,70%)`;
+    const size = random(canvas.width/3, canvas.width);
+    const left = random(0, canvas.width);
+    const top =  random(0, canvas.height);
+    if (Math.random() < 0.5) ctx.fillRect(left, top, size, size);
+    else {
+      ctx.beginPath();
+      ctx.ellipse(left, top, size, size, 0, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+  
+  let blob = await new Promise( resolve => canvas.toBlob(resolve) );
+  let timestamp = new Date();
+  let name = 'randompic_' + timestamp.toISOString() + '.png';
+  let file = new File([blob], name, {type:'image/png', lastModified:timestamp.getTime()});
+  return {
+    file,
+    dataURL: canvas.toDataURL()
+  };
+}

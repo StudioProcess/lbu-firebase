@@ -156,7 +156,10 @@
         console.log(point);
       });
       
-      
+      lbu.samplePic().then(pic => {
+        console.log(pic);
+        // document.querySelector('#photo-display img').src = pic.dataURL;
+      });
   </script>
   
   </body>
