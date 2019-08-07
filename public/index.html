@@ -146,6 +146,17 @@
         });
       });
       
+      
+      // test sample data
+      lbu.sampleData( [48.2, 16.366667] ).then( point => {
+        console.log(point);
+      });
+      
+      lbu.sampleData( [48.2, 16.366667], 50 ).then( point => {
+        console.log(point);
+      });
+      
+      
   </script>
   
   </body>

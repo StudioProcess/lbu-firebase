@@ -315,3 +315,75 @@ export async function upload(opts) {
     uploadTaskSnap
   }
 }
+
+
+
+// Sample Data
+const _sampleDataPath = './sample_data.json';
+let _sampleDataPromise, _sampleData;
+
+// lat: -90 .. +90, lng: -180 .. +179
+function getGridCell(lat, lng) {
+  // console.log(lat, lng);
+  lat += 1; // seems data is indexed like this
+  if (lat < -90 || lat > 90) return [];
+  lat = Math.floor(lat);
+  
+  while (lng < -180) lng += 360;
+  while (lng > 180) lng -= 360;
+  lng = Math.floor(lng);
+  
+  const key = 'lat' + (lat<0 ? '-' : '+') + String(lat).padStart(3, '0') + '_lng' + (lng<0 ? '-' : '+') + String(lng).padStart(3, '0');
+  // console.log(key);
+  const grid = _sampleData[key];
+  return grid;
+}
+
+function getGridCellNeighborhood(lat, lng) {
+  return [].concat(
+    getGridCell(lat+1, lng-1), getGridCell(lat+1, lng+0), getGridCell(lat+1, lng+1),
+    getGridCell(lat+0, lng-1), getGridCell(lat+0, lng+0), getGridCell(lat+0, lng+1),
+    getGridCell(lat-1, lng-1), getGridCell(lat-1, lng+0), getGridCell(lat-1, lng+1),
+  );
+}
+
+function dist(p0, p1) {
+  return Math.sqrt( Math.pow((p0[0]-p1[0]) * 100, 2) + Math.pow((p0[1]-p1[1]) * 100, 2) );
+}
+
+export async function loadSampleData() {
+  if (!_sampleDataPromise) { // only attempt to load once
+    console.log('Loading sample data...');
+    _sampleDataPromise = fetch(_sampleDataPath).then( async response => {
+      if (!response.ok) throw { message: 'Request failed', responseObject: response };
+      _sampleData = await response.json();
+      console.log('Sample data loaded');
+      return _sampleData;
+    }).catch(_err => {
+      console.log('Couldn\'t load sample data');
+    });
+  }
+  return _sampleDataPromise;
+}
+
+export async function sampleData(previousPoint, distance = 100) {
+  await loadSampleData(); // make sure sample data is loaded
+  if (!_sampleData) return; // return undefined if we have no data
+  
+  // let data = getGridCell(previousPoint[0], previousPoint[1]);
+  const data = getGridCellNeighborhood(previousPoint[0], previousPoint[1]);
+  if (data.length == 0) return;
+
+  // sort
+  const points = [];
+  for (let i=0; i<data.length; i+=2) {
+    const point = [ data[i], data[i+1] ];
+    point[2] = dist(point, previousPoint); // add distance to previous point as 3rd element
+    points.push( point );
+  }
+  // sort by difference to desired distance
+  points.sort( (a,b) => Math.abs(a[2] - distance) - Math.abs(b[2] - distance) );
+  // console.log(points);
+  // return point that's closest to desired distance
+  return points[0];
+}

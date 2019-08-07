@@ -1,3 +1,4 @@
 node_modules
 firebase-debug.log
 .firebase
+public/sample_data.json
