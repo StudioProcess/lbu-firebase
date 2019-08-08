@@ -37,6 +37,7 @@ function simplifyArray(arr) {
 
 /*
  * Once a new upload is complete, update dot document with it
+ * data: { lat, lng, ts }
  */
 async function updateStreams(data) {
   const streamsDoc = firestore.collection('_').doc('streams');
@@ -86,8 +87,8 @@ exports.checkUpload = functions.storage.object().onFinalize( async (object, _con
     
     await updateStreams({
       dotNum,
-      lat: snap.data().location.coords.latitude,
-      lng: snap.data().location.coords.longitude,
+      lat: snap.data().location.latitude,
+      lng: snap.data().location.longitude,
       ts:  snap.data().timestamp.toMillis()
     });
     

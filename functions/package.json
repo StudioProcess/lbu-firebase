@@ -12,6 +12,7 @@
     "deploy": "firebase deploy --only functions",
     "deploy:cleanup": "firebase deploy --only functions:cleanup",
     "deploy:updateCount": "firebase deploy --only functions:updateCount",
+    "deploy:checkUpload": "firebase deploy --only functions:checkUpload",
     "logs": "firebase functions:log"
   },
   "dependencies": {
