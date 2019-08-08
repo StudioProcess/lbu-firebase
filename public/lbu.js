@@ -44,12 +44,12 @@ export function setupCodeEntry(opts) {
   const deleteButton = document.querySelector(opts.delete_button);
   
   digitButtons.forEach(el => {
-    el.addEventListener('mousedown', e => {
+    el.addEventListener('mousedown', _e => {
       input.value += characterForDigit(el.dataset.digit);
     });
   });
   
-  deleteButton.addEventListener('mousedown', e => {
+  deleteButton.addEventListener('mousedown', _e => {
     input.value = input.value.slice(0, -1);
   });
 }
@@ -87,7 +87,7 @@ export function setupUploadCounter(opts) {
   }
   opts = Object.assign({}, defaults, opts);
   
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve, _reject) => {
     
     db.doc('_/stats').onSnapshot(snap => {
       let count = snap.data().uploadCount;
@@ -202,7 +202,8 @@ function getFileMetadata(file) {
 // message:    String (optional)
 // onProgress: callback function, called with { bytesTransferred, totalBytes }
 // onLocation: callback function, called with { latitude, longitude, accuracy, timestamp }
-// geolocationOptions: https://developer.mozilla.org/en-US/docs/Web/API/PositionOptions
+// locationOptions:  https://developer.mozilla.org/en-US/docs/Web/API/PositionOptions
+// locationOverride: {latitude, longitude, accuracy, timestamp}
 // Returns:    Promise, resolves with {docRef, storageRef, uploadTaskSnap}
 // Errors:
 //   { name:'MissingFile',            message:'No file provided' }
@@ -222,7 +223,8 @@ export async function upload(opts) {
     code: '',
     onProgress: null,
     onLocation: null,
-    geolocationOptions: undefined,
+    locationOptions: undefined,
+    locationOverride: undefined,
   };
   opts = Object.assign({}, defaults, opts);
   
@@ -254,20 +256,22 @@ export async function upload(opts) {
   }
   
   // Request Location
-  let loc;
-  try {
-    //  Throws PositionError (https://developer.mozilla.org/en-US/docs/Web/API/PositionError)
-    //  code: 1 .. PERMISSION_DENIED, 2 .. POSITION_UNAVAILABLE, 3 .. TIMEOUT
-    loc = await getLocation(opts.geolocationOptions);
-    if (opts.onLocation instanceof Function) {
-      opts.onLocation(loc);
+  let loc = opts.locationOverride;
+  if (!loc) {
+    try {
+      //  Throws PositionError (https://developer.mozilla.org/en-US/docs/Web/API/PositionError)
+      //  code: 1 .. PERMISSION_DENIED, 2 .. POSITION_UNAVAILABLE, 3 .. TIMEOUT
+      loc = await getLocation(opts.locationOptions);
+      // console.log(loc);
+    } catch (e) {
+      if (e.code == 1) throw { name:'GeolocationDenied', message:'Geolocation denied by user or browser settings' };
+      if (e.code == 2) throw { name:'GeolocationUnavailable', message:'Geolocation (temporarily) unavailable' };
+      if (e.code == 3) throw { name:'GeolocationTimeout', message:'Geolocation timeout' };
+      throw e;
     }
-    // console.log(loc);
-  } catch (e) {
-    if (e.code == 1) throw { name:'GeolocationDenied', message:'Geolocation denied by user or browser settings' };
-    if (e.code == 2) throw { name:'GeolocationUnavailable', message:'Geolocation (temporarily) unavailable' };
-    if (e.code == 3) throw { name:'GeolocationTimeout', message:'Geolocation timeout' };
-    throw e;
+  }
+  if (opts.onLocation instanceof Function) {
+    opts.onLocation(loc);
   }
   
   // Upload Data
@@ -319,7 +323,7 @@ export async function upload(opts) {
 
 
 // Sample Data
-const _sampleDataPath = './sample_data.json';
+const _sampleDataPath = './data/sample_data.json';
 let _sampleDataPromise, _sampleData;
 
 // lat: -90 .. +90, lng: -180 .. +179
@@ -366,9 +370,20 @@ export async function loadSampleData() {
   return _sampleDataPromise;
 }
 
-export async function sampleData(previousPoint, distance = 100) {
+export async function sampleLocation(previousPoint, distance = 100) {
   await loadSampleData(); // make sure sample data is loaded
   if (!_sampleData) return; // return undefined if we have no data
+  
+  if (!previousPoint) {     // get a random point
+    let data;
+    while (!data || data.length < 2000) { // find a full grid cell
+      data = getGridCell( -90 + Math.random() * 180, -180 + Math.random() * 360 )
+    }
+    // console.log('found grid', data);
+    const idx = Math.floor( Math.random() * data.length / 2 ) * 2;
+    // console.log('picking index', idx)
+    return data.slice( idx, idx+2 );
+  }
   
   // let data = getGridCell(previousPoint[0], previousPoint[1]);
   const data = getGridCellNeighborhood(previousPoint[0], previousPoint[1]);
@@ -420,5 +435,67 @@ export async function samplePic(width = 1500, height = 1000) {
   return {
     file,
     dataURL: canvas.toDataURL()
+  };
+}
+
+const _codesPath = './data/codes.json';
+
+export async function uploadCode(dotNum) {
+  try {
+    const response = await fetch(_codesPath);
+    if (!response.ok) throw { message: 'Request failed', responseObject: response };
+    const codes = await response.json();
+    if (dotNum < 0 || dotNum > codes.length-1) return;
+    return codes[dotNum]; 
+  } catch (err) {
+    console.log('Couldn\'t load upload codes');
+    return;
+  }
+}
+
+// Get a full set of sample upload data compatible with upload()
+// Options:
+//   dotNum:   Dot for which to generate data. If left undefined (or NaN) a random dot is picked
+//   distance: Desired distance from last location of dot
+export async function sampleUpload(opts) {
+  const defaults = {
+    dotNum: undefined,
+    distance: 100
+  };
+  opts = Object.assign({}, defaults, opts);
+  
+  if ( opts.dotNum === undefined || isNaN(opts.dotNum) ) {
+    opts.dotNum = Math.floor( 1 + Math.random() * 320 );
+  }
+  
+  if ( opts.distance === undefined || isNaN(opts.distance) ) {
+    opts.distance = defaults.distance;
+  }
+  
+  const message = "Hello, sample message " + (new Date()).toISOString() + "!";
+  const code = await uploadCode(opts.dotNum);
+  const codeSymbols = code.split('_').reduce( (acc, num) => acc + String.fromCodePoint(digits[parseInt(num)][1]), '' );
+  const photo = await samplePic();
+  const snap = await db.doc('_/streams').get();
+  const streams = snap.data().last;
+  const dotData = streams[ String(opts.dotNum).padStart(3,'0') ]; 
+
+  const loc = { latitude: 0, longitude: 0, accuracy: 0, timestamp: new Date() };
+  const previousLoc = dotData ? dotData.slice(0,2) : null;
+  const newloc = await sampleLocation( previousLoc, opts.distance );
+  loc.latitude = newloc[0];
+  loc.longitude = newloc[1];
+  const distance = newloc[2]; // can be undefined, in case of random location
+
+  return {
+    file: photo.file,
+    code,
+    message,
+    locationOverride: loc,
+    
+    codeSymbols,
+    dotNum: opts.dotNum,
+    distance,
+    dataURL: photo.dataURL
   };
 }

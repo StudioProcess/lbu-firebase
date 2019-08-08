@@ -31,6 +31,9 @@
       #code { font-family:"Ionicons",system-ui; letter-spacing:0.2em; }
       #photo-display img:not([src]) { display:none; }
       #photo-display img { max-height:100px; width:auto; }
+      #message { width: 300px; }
+      #sampleDot { width: 30px; }
+      #sampleDist { width: 60px; }
     </style>
   </head>
   
@@ -53,7 +56,7 @@
       <!-- <label for="name">Name</label> <input id="name" placeholder="Name"><br> -->
       <label for="photo">Photo</label> <input id="photo" type="file" accept="image/*"><br>
       <div id="photo-display"><img></div>
-      <label for="name">Message (optional)</label> <input id="message" placeholder="Message (optional)"><br>
+      <label for="message">Message (optional)</label> <input id="message" placeholder="Message (optional)"><br>
       <label for="code">Code</label> <input id="code" placeholder="Code"><br>
       <div id="keypad">
         <button data-digit="0"><i class="icon ion-md-heart"></i></button>
@@ -69,6 +72,7 @@
         <button class="delete">delete</button><br>
       </div>
       <button id="submit" type="submit">Submit</button><br>
+      <label for="sampleDot">dot</label> <input id="sampleDot" type="number" min="0" max="321"> <label for="sampleDist">distance</label> <input id="sampleDist" type="number" min="0" value="100"> <button id="sample" type="submit">Submit Sample Data</button><br>
       <div id="log"></div>
     </div>
     
@@ -123,7 +127,7 @@
       lbu.onData(data => {
         document.querySelector('#streams').value = JSON.stringify(data, null, 2);
       }).then( () => {
-        log('NOTE: data ready');
+        log('NOTE: dot data ready');
       })
       
       document.querySelector('#submit').addEventListener('click', e => {
@@ -138,8 +142,8 @@
           onLocation: loc => {
             log('LOCATION', loc);
           },
-        }).then(res => {
-          log('SUCCESS'); // not printing rew, has circular JSON
+        }).then(_res => {
+          log('SUCCESS'); // not printing res, has circular JSON
         }).catch(err => {
           log('ERROR', err);
           throw err;
@@ -148,11 +152,15 @@
       
       
       // test sample data
-      lbu.sampleData( [48.2, 16.366667] ).then( point => {
+      lbu.loadSampleData().then(() => {
+        log('NOTE: sample data ready');
+      });
+      
+      lbu.sampleLocation( [48.2, 16.366667] ).then( point => {
         console.log(point);
       });
       
-      lbu.sampleData( [48.2, 16.366667], 50 ).then( point => {
+      lbu.sampleLocation( [48.2, 16.366667], 50 ).then( point => {
         console.log(point);
       });
       
@@ -160,6 +168,40 @@
         console.log(pic);
         // document.querySelector('#photo-display img').src = pic.dataURL;
       });
+      
+      lbu.uploadCode(1).then(code => {
+        console.log(code);
+      });
+      
+      // Sample data button
+      document.querySelector('#sample').addEventListener('click', e => {
+        // get dot number from input element (can be empty)
+        let dotNum = parseInt( document.querySelector('#sampleDot').value );
+        let distance = parseInt( document.querySelector('#sampleDist').value );
+        
+        // get sample upload data
+        clearLog();
+        log('GETTING SAMPLE DATA');
+        lbu.sampleUpload({dotNum, distance}).then(upload => {
+          // update interface
+          document.querySelector('#message').value = upload.message;
+          document.querySelector('#code').value = upload.codeSymbols;
+          document.querySelector('#photo-display img').src = upload.dataURL;
+          delete upload.dataURL;
+          log('DATA', upload);
+          
+          log('UPLOAD STARTED');
+          upload.onProgress = status => { log('PROGRESS', status) };
+          upload.onLocation = loc => { log('LOCATION', loc) };
+          lbu.upload(upload).then(() => {
+            log('SUCCESS'); // not printing res, has circular JSON
+          }).catch( err => {
+            log('ERROR', err);
+            throw err;
+          });
+        });
+      });
+      
   </script>
   
   </body>
