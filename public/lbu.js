@@ -1,3 +1,20 @@
+/*
+  Exported functions:
+    init(config)
+    setupCodeEntry(opts)
+    setupPopCounter(opts)
+    setupUploadCounter(opts): Promise
+    setupImageSelect(opts)
+    onData(cb): Promise
+    upload(opts): Promise
+    
+    loadSampleData(): Promise
+    sampleLocation(previousPoint, distance): Promise
+    samplePic(width, height): Promise
+    uploadCode(dotNum): Promise
+    sampleUpload(opts): Promise
+*/
+
 const digits = {
   0: ['md-heart',   0xf308],
   1: ['ios-moon',   0xf468],
