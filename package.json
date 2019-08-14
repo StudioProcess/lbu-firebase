@@ -4,7 +4,7 @@
   "description": "",
   "main": "",
   "scripts": {
-    "start": "live-server",
+    "start": "live-server public/",
     "startfb": "firebase serve --port 8080",
     "test": "echo \"Error: no test specified\" && exit 1",
     "deploy:rules": "firebase deploy --only firestore:rules"
