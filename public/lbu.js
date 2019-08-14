@@ -138,18 +138,12 @@ export function setupImageSelect(opts) {
 
 // Streams data
 export function onData(cb) {
-  return new Promise( (resolve, reject) => {
-    
-    if (cb instanceof Function) {
-      db.doc('_/streams').onSnapshot(snap => {
-        let streams = snap.data();
-        cb(streams);
-        resolve(streams);
-      });
-    } else {
-      reject('No Callback provided');
-    }
-    
+  return new Promise( (resolve, _reject) => {
+    db.doc('_/streams').onSnapshot(snap => {
+      let streams = snap.data();
+      if (cb instanceof Function) cb(streams);
+      resolve(streams);
+    });
   });
 }
 
