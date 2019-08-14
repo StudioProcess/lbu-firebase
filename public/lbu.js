@@ -354,16 +354,23 @@ function getGridCell(lat, lng) {
   return grid;
 }
 
-function getGridCellNeighborhood(lat, lng) {
-  return [].concat(
-    getGridCell(lat+1, lng-1), getGridCell(lat+1, lng+0), getGridCell(lat+1, lng+1),
-    getGridCell(lat+0, lng-1), getGridCell(lat+0, lng+0), getGridCell(lat+0, lng+1),
-    getGridCell(lat-1, lng-1), getGridCell(lat-1, lng+0), getGridCell(lat-1, lng+1),
-  );
+
+function getGridCellNeighborhood(lat, lng, dist = 1) {
+  console.log('neighborhood ' + dist);
+  dist = Math.floor(dist)
+  let data = [];
+  for ( let j=lat-dist; j<=lat+dist; j++ ) {
+    for ( let i=lng-dist; i<=lng+dist; i++ ) {
+      data = data.concat( getGridCell(j, i) );
+    }
+  }
+  return data;
 }
 
+
+const KM_PER_DEG = 111;
 function dist(p0, p1) {
-  return Math.sqrt( Math.pow((p0[0]-p1[0]) * 100, 2) + Math.pow((p0[1]-p1[1]) * 100, 2) );
+  return Math.sqrt( Math.pow((p0[0]-p1[0]) * KM_PER_DEG, 2) + Math.pow((p0[1]-p1[1]) * KM_PER_DEG, 2) );
 }
 
 export async function loadSampleData() {
@@ -397,7 +404,7 @@ export async function sampleLocation(previousPoint, distance = 100) {
   }
   
   // let data = getGridCell(previousPoint[0], previousPoint[1]);
-  const data = getGridCellNeighborhood(previousPoint[0], previousPoint[1]);
+  const data = getGridCellNeighborhood(previousPoint[0], previousPoint[1], distance / KM_PER_DEG);
   if (data.length == 0) return;
 
   // sort
