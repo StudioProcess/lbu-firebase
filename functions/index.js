@@ -1,7 +1,8 @@
 'use strict';
 
-const SIMPLIFY_TOLERANCE = 0.5;
-const KEEP_LAST = 10;
+const SIMPLIFY_TOLERANCE = 0.5; // tolerance setting for simplify.js
+const SIMPLIFY_THRESHOLD = 25;  // simplify only when more than this amount of points
+const KEEP_LAST = 10;           // how many points to keep in last array
 
 const functions = require('firebase-functions');
 const path = require('path');
@@ -49,7 +50,11 @@ async function updateStreams(data) {
   let last = streams.last[dotIdx] || [];
   
   integrated.push( data.lat, data.lng );
-  integrated = simplifyArray(integrated)
+  if (integrated.length > SIMPLIFY_THRESHOLD*2) {
+    let len_before = integrated.length/2;
+    integrated = simplifyArray(integrated);
+    console.log(`simplified: ${len_before} -> ${integrated.length/2}`);
+  }
   
   last.unshift( data.lat, data.lng, data.ts );
   if (last.length > KEEP_LAST*3) last = last.slice(0, KEEP_LAST*3);
@@ -57,7 +62,7 @@ async function updateStreams(data) {
   return streamsDoc.update({
     [`integrated.${dotIdx}`]: integrated,
     [`last.${dotIdx}`]: last,
-    "updated": dotIdx,
+    'updated': dotIdx,
   });
 }
 
@@ -172,7 +177,7 @@ exports.cleanup = functions.https.onRequest((req, res) => {
  */
 exports.updateCount = functions.firestore
   .document('uploads/{uploadId}')
-  .onWrite( (change, context) => {
+  .onWrite( (change, _context) => {
     let increment = 0;
     let operation = ''; // for debug output only
     if (!change.after.exists) {
