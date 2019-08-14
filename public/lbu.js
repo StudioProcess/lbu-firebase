@@ -356,7 +356,6 @@ function getGridCell(lat, lng) {
 
 
 function getGridCellNeighborhood(lat, lng, dist = 1) {
-  console.log('neighborhood ' + dist);
   dist = Math.floor(dist)
   let data = [];
   for ( let j=lat-dist; j<=lat+dist; j++ ) {
