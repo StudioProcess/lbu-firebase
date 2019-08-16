@@ -4,7 +4,7 @@
     setupCodeEntry(opts)
     setupPopCounter(opts)
     setupUploadCounter(opts): Promise
-    setupImageSelect(opts)
+    setupImageSelect(opts): Promise
     onData(cb): Promise
     upload(opts): Promise
     
@@ -118,20 +118,35 @@ export function setupUploadCounter(opts) {
 }
 
 
-export function setupImageSelect(opts) {
+// Optional Callback is invoked every time an image is loaded
+// Returns: Promise, resolves when first image is loaded
+export async function setupImageSelect(opts, cb) {
   const defaults = {
     input: '#photo',
-    image: '#photo-display img'
+    image: '#photo-display img',
+    background: '',
   }
   opts = Object.assign({}, defaults, opts);
   let input = document.querySelector(opts.input);
-  input.addEventListener('change', e => {
-    let file = e.target.files[0];
-    if ( !file || !file.type.startsWith('image/') ) return;
-    let img = document.querySelector(opts.image);
-    let reader = new FileReader();
-    reader.onload = e => { img.src = e.target.result; };
-    reader.readAsDataURL(file);
+  
+  return new Promise(resolve => {
+    input.addEventListener('change', e => {
+      let file = e.target.files[0];
+      if ( !file || !file.type.startsWith('image/') ) return;
+      let reader = new FileReader();
+      reader.onload = e => {
+        if (opts.background) {
+          let img = document.querySelector(opts.background);
+          img.style.setProperty('background-image', `url(${e.target.result})`, 'important');
+        } else {
+          let img = document.querySelector(opts.image);
+          img.src = e.target.result;
+        }
+        resolve(e);
+        if (cb instanceof Function) cb(e);
+      };
+      reader.readAsDataURL(file);
+    });
   });
 }
 
