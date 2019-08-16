@@ -73,6 +73,7 @@
       </div>
       <button id="submit" type="submit">Submit</button><br>
       <label for="sampleDot">dot</label> <input id="sampleDot" type="number" min="0" max="321" value="1"> <label for="sampleDist">distance</label> <input id="sampleDist" type="number" min="0" value="100"> <button id="sample" type="submit">Submit Sample Data</button><br>
+      <label for="sampleDotLoc">dot</label> <input id="sampleDotLoc" type="number" min="0" max="321" value="1"> <label for="sampleLat">latitude</label> <input id="sampleLat" type="number" min="-90" max="90" value="50.5" step="0.1"> <label for="sampleLng">longitude</label> <input id="sampleLng" type="number" min="-180" max="180" value="0" step="0.1"> <button id="sampleLoc" type="submit">Submit Sample Data</button><br>
       <div id="log"></div>
     </div>
     
@@ -183,6 +184,36 @@
         clearLog();
         log('GETTING SAMPLE DATA');
         lbu.sampleUpload({dotNum, distance}).then(upload => {
+          // update interface
+          document.querySelector('#message').value = upload.message;
+          document.querySelector('#code').value = upload.codeSymbols;
+          document.querySelector('#photo-display img').src = upload.dataURL;
+          delete upload.dataURL;
+          log('DATA', upload);
+          
+          log('UPLOAD STARTED');
+          upload.onProgress = status => { log('PROGRESS', status) };
+          upload.onLocation = loc => { log('LOCATION', loc) };
+          lbu.upload(upload).then(() => {
+            log('SUCCESS'); // not printing res, has circular JSON
+          }).catch( err => {
+            log('ERROR', err);
+            throw err;
+          });
+        });
+      });
+      
+      // Sample data with location button
+      document.querySelector('#sampleLoc').addEventListener('click', e => {
+        // get dot number from input element (can be empty)
+        let dotNum = parseInt( document.querySelector('#sampleDotLoc').value );
+        let latitude = parseFloat( document.querySelector('#sampleLat').value.replace(',', '.') );
+        let longitude = parseFloat( document.querySelector('#sampleLng').value.replace(',', '.') );
+        
+        // get sample upload data
+        clearLog();
+        log('GETTING SAMPLE DATA (LOCATION GIVEN)');
+        lbu.sampleUpload({dotNum, latitude, longitude}).then(upload => {
           // update interface
           document.querySelector('#message').value = upload.message;
           document.querySelector('#code').value = upload.codeSymbols;
