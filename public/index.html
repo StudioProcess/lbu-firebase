@@ -137,6 +137,7 @@
         lbu.upload({
           file: document.querySelector('#photo').files[0],
           code: document.querySelector('#code').value,
+          message: document.querySelector('#message').value,
           onProgress: status => {
             log('PROGRESS', status);
           },
