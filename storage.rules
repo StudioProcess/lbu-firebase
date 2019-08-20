@@ -1,8 +1,23 @@
+// Note:
+// read  = list, get
+// write = create, update, delete
+
+rules_version = '2';
+
 service firebase.storage {
   match /b/{bucket}/o {
-    match /{id}/{filename} {
-    	// limit file size to 5 MB
+    match /{allPaths=**} {
+      
+      // Limit file size to 5 MB
       allow write: if request.resource.size < 5 * 1024 * 1024;
+      
+      // Only authenticated users can read or write to the bucket
+      // && request.auth != null;
+      
+      // WARNING: Comment out in production!
+      // Uncomment to allow resetting uploads (via resetUploads):
+      allow list, delete;
+      
     }
   }
 }

@@ -7,7 +7,9 @@
     "start": "live-server public/",
     "startfb": "firebase serve --port 8080",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy:rules": "firebase deploy --only firestore:rules"
+    "deploy:rules": "firebase deploy --only firestore:rules,storage:rules",
+    "deploy:firestore.rules": "firebase deploy --only firestore:rules",
+    "deploy:storage.rules": "firebase deploy --only storage:rules"
   },
   "author": "Process Studio <contact@process.studio> (https://process.studio)",
   "license": "AGPL-3.0",
@@ -17,7 +19,7 @@
     "firebase-functions": "^3.2.0"
   },
   "devDependencies": {
-    "firebase-tools": "^7.2.2",
+    "firebase-tools": "^7.2.4",
     "live-server": "^1.2.1"
   }
 }

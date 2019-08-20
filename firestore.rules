@@ -1,3 +1,7 @@
+// Note:
+// read  = list, get
+// write = create, update, delete
+
 // Tests if a requests data object has exactly the provided keys
 function dataKeysAre(fields) {
   return request.resource.data.keys().hasAll(fields)
@@ -16,17 +20,30 @@ service cloud.firestore {
       allow get;
     }
     
-    // Uncomment to allow uploading new codes:
-    // match /codes/{doc} {
-    // 	allow write;
-    // }
-    
     match /_/stats {
       allow get;
     }
     
     match /_/streams {
       allow get;
+    }
+    
+    // WARNING: Comment out in production!
+    // Uncomment to allow uploading new codes:
+    // match /codes/{doc} {
+    //   allow write;
+    // }
+    
+    // WARNING: Comment out in production!
+    // Uncomment to allow resetting uploads (via resetUploads()):
+    match /uploads/{upload} {
+      allow list, delete;
+    }
+    
+    // WARNING: Comment out in production!
+    // Uncomment to allow resetting streams (via resetStreams()):
+    match /_/streams {
+      allow update;
     }
     
   }

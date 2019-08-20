@@ -544,3 +544,77 @@ export async function sampleUpload(opts) {
     dataURL: photo.dataURL
   };
 }
+
+
+
+// Reset functions (Needs rules enabled in firestore.rules and storage.rules)
+export async function resetStreams() {
+  return db.doc('_/streams').set({
+    integrated: {}, last: {}, updated: ''
+  }).then(() => {
+    console.log('COMPLETED resetStreams');
+  });
+}
+
+export async function resetUploads() {
+  // delete uploads collection
+  await deleteCollection(db, 'uploads', 100).then(() => {
+    console.log('  Note: Deleted uploads collection');
+  });
+  
+  // delete storage
+  // needs list and delete permissions (write)
+  let result = await storage.ref('/').listAll();
+  let folderRefs = result.prefixes;
+  
+  let filePromises = folderRefs.map(ref => ref.listAll());
+  
+  result = await Promise.all(filePromises);
+  let fileRefs = result.reduce((acc, res) => acc.concat(res.items), []);
+  
+  let deletePromises = fileRefs.map(ref => ref.delete());
+  return Promise.all(deletePromises).then(() => {
+    console.log('  Note: Deleted images in storage bucket');
+    console.log('COMPLETED resetUploads');
+  });
+}
+
+async function deleteCollection(db, collectionPath, batchSize) {
+  let collectionRef = db.collection(collectionPath);
+  let query = collectionRef.orderBy('__name__').limit(batchSize);
+
+  return new Promise((resolve, reject) => {
+    deleteQueryBatch(db, query, batchSize, resolve, reject);
+  });
+}
+
+function deleteQueryBatch(db, query, batchSize, resolve, reject) {
+  query.get()
+    .then((snapshot) => {
+      // When there are no documents left, we are done
+      if (snapshot.size == 0) {
+        return 0;
+      }
+
+      // Delete documents in a batch
+      let batch = db.batch();
+      snapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+
+      return batch.commit().then(() => {
+        return snapshot.size;
+      });
+    }).then((numDeleted) => {
+      if (numDeleted === 0) {
+        resolve();
+        return;
+      }
+
+      // Recurse on the next process tick, to avoid
+      // exploding the stack.
+      window.setTimeout(() => {
+        deleteQueryBatch(db, query, batchSize, resolve, reject);
+      }, 0);
+    }).catch(reject);
+}
