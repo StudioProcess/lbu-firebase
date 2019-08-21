@@ -42,6 +42,7 @@ service cloud.firestore {
     
     // WARNING: Comment out in production!
     // Uncomment to allow resetting streams (via resetStreams()):
+    // Uncomment to allow adding test data
     match /_/streams {
       allow update;
     }

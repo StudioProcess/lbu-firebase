@@ -348,7 +348,9 @@ export async function upload(opts) {
 
 
 
-// Sample Data
+/*
+ * Sample Data
+*/
 const _sampleDataPath = './data/sample_data.json';
 let _sampleDataPromise, _sampleData;
 
@@ -546,8 +548,12 @@ export async function sampleUpload(opts) {
 }
 
 
+/*
+ * Reset functions
+ * Note: Needs rules enabled in firestore.rules and storage.rules
+*/
 
-// Reset functions (Needs rules enabled in firestore.rules and storage.rules)
+// Reset streams document to empty state
 export async function resetStreams() {
   return db.doc('_/streams').set({
     integrated: {}, last: {}, updated: ''
@@ -556,6 +562,7 @@ export async function resetStreams() {
   });
 }
 
+// Reset uploads (i.e. uploads collection in firestore and images in storage)
 export async function resetUploads() {
   // delete uploads collection
   await deleteCollection(db, 'uploads', 100).then(() => {
@@ -579,6 +586,7 @@ export async function resetUploads() {
   });
 }
 
+// Helper for resetUploads()
 async function deleteCollection(db, collectionPath, batchSize) {
   let collectionRef = db.collection(collectionPath);
   let query = collectionRef.orderBy('__name__').limit(batchSize);
@@ -588,6 +596,7 @@ async function deleteCollection(db, collectionPath, batchSize) {
   });
 }
 
+// Helper for deleteCollection()
 function deleteQueryBatch(db, query, batchSize, resolve, reject) {
   query.get()
     .then((snapshot) => {
