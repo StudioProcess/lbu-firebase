@@ -1,5 +1,7 @@
 /*
   Exported functions:
+  
+  For use in production:
     init(config)
     setupCodeEntry(opts)
     setupPopCounter(opts)
@@ -7,12 +9,18 @@
     setupImageSelect(opts): Promise
     onData(cb): Promise
     upload(opts): Promise
-    
+  
+  Sample data:
     loadSampleData(): Promise
     sampleLocation(previousPoint, distance): Promise
     samplePic(width, height): Promise
     uploadCode(dotNum): Promise
     sampleUpload(opts): Promise
+    sampleStreamData(opts): Promise
+  
+  Reset functions:
+    resetStreams(): Promise
+    resetUploads(): Promise
 */
 
 const digits = {
