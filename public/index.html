@@ -86,6 +86,15 @@
       <label for="sampleLng">longitude</label> <input id="sampleLng" type="number" min="-180" max="180" value="0" step="0.1"> 
       <button id="sampleLoc" type="submit">Submit</button><br>
       
+      Add to Stream (no uploads): 
+      <label for="sampleDotStream">dot</label> <input id="sampleDotStream" type="number" min="0" max="321" value="1"> 
+      <label for="stepsStream">steps to add</label> <input id="stepsStream" type="number" min="1" max="100" value="3"> 
+      <label for="mindistStream">min dist</label> <input id="mindistStream" type="number" min="1" max="1000" value="50"> 
+      <label for="maxdistStream">max dist</label> <input id="maxdistStream" type="number" min="1" max="1000" value="250"> 
+      <label for="forceLatStream">force latitude</label> <input id="forceLatStream" type="number" min="-90" max="90" step="0.1"> 
+      <label for="forceLngStream">force longitude</label> <input id="forceLngStream" type="number" min="-180" max="180" step="0.1"> 
+      <button id="sampleStream" type="submit">Submit</button><br>
+      
       <br>
       Reset Streams Data: <button id="resetStreams" type="submit">Reset</button><br>
       Reset Uploads: <button id="resetUploads" type="submit">Reset</button><br>
@@ -106,7 +115,7 @@
       function log(str, obj) { 
         let el = document.querySelector('#log'); 
         el.innerText += str;
-        if (obj) {
+        if (obj != undefined) {
           el.innerText += ' ' + JSON.stringify(obj);
         }
         el.innerText += '\n';
@@ -252,15 +261,38 @@
       });
       
       
+      // Add to Stream Button
+      document.querySelector('#sampleStream').addEventListener('click', e => {
+        let opts = {
+          dotNum: parseInt( document.querySelector('#sampleDotStream').value ),
+          steps: parseInt( document.querySelector('#stepsStream').value ),
+          distanceMin: parseInt( document.querySelector('#mindistStream').value ),
+          distanceMax: parseInt( document.querySelector('#maxdistStream').value ),
+          startLatitude: parseFloat( document.querySelector('#forceLatStream').value.replace(',', '.') ),
+          startLongitude: parseFloat( document.querySelector('#forceLngStream').value.replace(',', '.') ),
+        };
+        clearLog();
+        log('ADDING TO STREAMS', opts);
+        
+        lbu.sampleStreamData(opts).then(() => {
+          log('SUCCESS');
+        }).catch(err => {
+          log('ERROR', err);
+          throw err;
+        });
+      });
+      
+      
       // Reset Streams Button
       document.querySelector('#resetStreams').addEventListener('click', e => {
         if (window.confirm('Warning: This will delete all visualization data!')) {
           clearLog();
           log('RESETTING STREAMS');
           lbu.resetStreams().then(() => {
-            log('SUCESS');
+            log('SUCCESS');
           }).catch(err => {
             log('ERROR', err);
+            throw err;
           });
         }
       });
@@ -272,9 +304,10 @@
           clearLog();
           log('RESETTING UPLOADS');
           lbu.resetUploads().then(() => {
-            log('SUCESS');
+            log('SUCCESS');
           }).catch(err => {
             log('ERROR', err);
+            throw err;
           });
         }
       });

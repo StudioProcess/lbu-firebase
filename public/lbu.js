@@ -564,25 +564,42 @@ export async function sampleStreamData(opts) {
   };
   opts = Object.assign({}, defaults, opts);
   
-  if ( opts.dotNum === undefined || isNaN(opts.dotNum) ) {
+  if ( opts.dotNum === undefined || opts.dotNum === null || isNaN(opts.dotNum) ) {
     opts.dotNum = Math.floor( 1 + Math.random() * 320 );
   }
   
   let data = (await db.doc('_/streams').get()).data();
   let dotkey = opts.dotNum.toString().padStart(3, '0');
   
-  if ( opts.startLatitude === undefined || opts.startLongitude === undefined ) { 
+  if ( opts.startLatitude === undefined || opts.startLatitude === null || isNaN(opts.startLatitude) ||
+    opts.startLongitude === undefined || opts.startLongitude === null || isNaN(opts.startLongitude)) {
     // check for previous location
-    if (data.last && data.last[dotkey] && data.last[dotkey].length > 3) { // get last location of dot stream
+    if (data.last && data.last[dotkey] && data.last[dotkey].length >= 3) { // get last location of dot stream
       let last = data.last[dotkey].slice(-3);
-      opts.startLatitude = last[0];
-      opts.startLongitude = last[1];
+      let dist = Math.floor( opts.distanceMin + Math.random() * (opts.distanceMax - opts.distanceMin) );
+      let loc = await sampleLocation( last, dist );
+      opts.startLatitude = loc[0];
+      opts.startLongitude = loc[1];
+      // console.log('previous location: ', last[0], last[1], loc[0], loc[1]);
     } else {
       // get a random start location
       let loc = await sampleLocation(); 
       opts.startLatitude  = loc[0];
       opts.startLongitude = loc[1];
+      // console.log('random location: ', loc[0], loc[1]);
     }
+  }
+  
+  if (opts.distanceMin == undefined) { // only true for undefined and null
+    opts.distanceMin = defaults.distanceMin;
+  }
+  
+  if (opts.distanceMax == undefined) { // only true for undefined and null
+    opts.distanceMax = defaults.distanceMax;
+  }
+  
+  if (opts.steps == undefined) {
+    opts.steps = defaults.steps;
   }
   
   if (opts.distanceMin > opts.distanceMax) {
