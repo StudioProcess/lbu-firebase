@@ -52,6 +52,7 @@
       streams: <textarea id="streams"></textarea></br>
     </div>
     
+    <br>
     <div id="form">
       <!-- <label for="name">Name</label> <input id="name" placeholder="Name"><br> -->
       <label for="photo">Photo</label> <input id="photo" type="file" accept="image/*"><br>
@@ -72,6 +73,24 @@
         <button class="delete">delete</button><br>
       </div>
       <button id="submit" type="submit">Submit</button><br>
+      
+      <br>
+      Add Random Location: 
+      <label for="sampleDot">dot</label> <input id="sampleDot" type="number" min="0" max="321" value="1"> 
+      <label for="sampleDist">distance</label> <input id="sampleDist" type="number" min="0" value="100"> 
+      <button id="sample" type="submit">Submit</button><br>
+     
+      Add Precise Location: 
+      <label for="sampleDotLoc">dot</label> <input id="sampleDotLoc" type="number" min="0" max="321" value="1"> 
+      <label for="sampleLat">latitude</label> <input id="sampleLat" type="number" min="-90" max="90" value="50.5" step="0.1"> 
+      <label for="sampleLng">longitude</label> <input id="sampleLng" type="number" min="-180" max="180" value="0" step="0.1"> 
+      <button id="sampleLoc" type="submit">Submit</button><br>
+      
+      <br>
+      Reset Streams Data: <button id="resetStreams" type="submit">Reset</button><br>
+      Reset Uploads: <button id="resetUploads" type="submit">Reset</button><br>
+      <br>
+      
       <div id="log"></div>
     </div>
     
@@ -232,6 +251,33 @@
         });
       });
       
+      
+      // Reset Streams Button
+      document.querySelector('#resetStreams').addEventListener('click', e => {
+        if (window.confirm('Warning: This will delete all visualization data!')) {
+          clearLog();
+          log('RESETTING STREAMS');
+          lbu.resetStreams().then(() => {
+            log('SUCESS');
+          }).catch(err => {
+            log('ERROR', err);
+          });
+        }
+      });
+      
+      
+      // Reset Uploads Button
+      document.querySelector('#resetUploads').addEventListener('click', e => {
+        if (window.confirm('WARNING: This will delete ALL uploaded data!')) {
+          clearLog();
+          log('RESETTING UPLOADS');
+          lbu.resetUploads().then(() => {
+            log('SUCESS');
+          }).catch(err => {
+            log('ERROR', err);
+          });
+        }
+      });
   </script>
   
   </body>
