@@ -556,7 +556,7 @@ const KEEP_LAST = 10;           // how many points to keep in last array
 export async function sampleStreamData(opts) {
   const defaults = {
     dotNum: undefined, // if undefined, picks a random dot
-    startLatitude: undefined, // if undefined, picks a random start location
+    startLatitude: undefined, // if undefined and dot has no previous location, picks a random location
     startLongitude: undefined,
     distanceMin: 50, // distance between steps
     distanceMax: 250,
@@ -568,10 +568,21 @@ export async function sampleStreamData(opts) {
     opts.dotNum = Math.floor( 1 + Math.random() * 320 );
   }
   
-  if ( opts.startLatitude === undefined || opts.startLongitude === undefined ) {
-    let loc = await sampleLocation(); // get a random location
-    opts.startLatitude  = loc[0];
-    opts.startLongitude = loc[1];
+  let data = (await db.doc('_/streams').get()).data();
+  let dotkey = opts.dotNum.toString().padStart(3, '0');
+  
+  if ( opts.startLatitude === undefined || opts.startLongitude === undefined ) { 
+    // check for previous location
+    if (data.last && data.last[dotkey] && data.last[dotkey].length > 3) { // get last location of dot stream
+      let last = data.last[dotkey].slice(-3);
+      opts.startLatitude = last[0];
+      opts.startLongitude = last[1];
+    } else {
+      // get a random start location
+      let loc = await sampleLocation(); 
+      opts.startLatitude  = loc[0];
+      opts.startLongitude = loc[1];
+    }
   }
   
   if (opts.distanceMin > opts.distanceMax) {
@@ -589,13 +600,12 @@ export async function sampleStreamData(opts) {
     loc = loc.slice(0, 2);
     locs.push(...loc);
   }
-  // console.log(locs);
-  let data = (await db.doc('_/streams').get()).data();
-  let dotkey = opts.dotNum.toString().padStart(3, '0');
+  
   // integrated property
   let integrated = data.integrated[dotkey] || [];
   integrated.push(...locs);
   data.integrated[dotkey] = integrated;
+  
   // last property
   let last = data.last[dotkey] || [];
   let locs_ts = locs.reduce((acc, val, idx) => {
@@ -606,9 +616,10 @@ export async function sampleStreamData(opts) {
   last.push(...locs_ts);
   last = last.slice(0, KEEP_LAST*3);
   data.last[dotkey] = last;
+  
   // last updated property
   data.updated = dotkey;
-  console.log(data);
+  // console.log(data);
   return db.doc('_/streams').set(data);
 }
 
