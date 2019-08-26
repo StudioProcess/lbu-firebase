@@ -408,7 +408,7 @@ export async function sampleLocation(previousPoint, distance = 100) {
   await loadSampleData(); // make sure sample data is loaded
   if (!_sampleData) return; // return undefined if we have no data
   
-  if (!previousPoint) {     // get a random point
+  if (!previousPoint) {     // get a random point (ignore distance)
     let data;
     while (!data || data.length < 2000) { // find a full grid cell
       data = getGridCell( -90 + Math.random() * 180, -180 + Math.random() * 360 )
@@ -545,6 +545,71 @@ export async function sampleUpload(opts) {
     distance,
     dataURL: photo.dataURL
   };
+}
+
+
+// Add sample data to the stream, without going through the normal upload process
+// Note: This just adds data to the integrated stream, without simplifying
+// const SIMPLIFY_TOLERANCE = 0.5; // tolerance setting for simplify.js
+// const SIMPLIFY_THRESHOLD = 25;  // simplify only when more than this amount of points
+const KEEP_LAST = 10;           // how many points to keep in last array
+export async function sampleStreamData(opts) {
+  const defaults = {
+    dotNum: undefined, // if undefined, picks a random dot
+    startLatitude: undefined, // if undefined, picks a random start location
+    startLongitude: undefined,
+    distanceMin: 50, // distance between steps
+    distanceMax: 250,
+    steps: 1, // how many points to add
+  };
+  opts = Object.assign({}, defaults, opts);
+  
+  if ( opts.dotNum === undefined || isNaN(opts.dotNum) ) {
+    opts.dotNum = Math.floor( 1 + Math.random() * 320 );
+  }
+  
+  if ( opts.startLatitude === undefined || opts.startLongitude === undefined ) {
+    let loc = await sampleLocation(); // get a random location
+    opts.startLatitude  = loc[0];
+    opts.startLongitude = loc[1];
+  }
+  
+  if (opts.distanceMin > opts.distanceMax) {
+    let help = opts.distanceMin;
+    opts.distanceMin = opts.distanceMax;
+    opts.distanceMax = help;
+  }
+  
+  let locs = [opts.startLatitude, opts.startLongitude];
+  if (opts.steps <= 0) opts.steps = 1; 
+  for (let i=0; i<opts.steps-1; i++) {
+    let dist = Math.floor( opts.distanceMin + Math.random() * (opts.distanceMax - opts.distanceMin) );
+    let prevLoc = locs.slice(i*2, i*2+2);
+    let loc = await sampleLocation( prevLoc, dist );
+    loc = loc.slice(0, 2);
+    locs.push(...loc);
+  }
+  // console.log(locs);
+  let data = (await db.doc('_/streams').get()).data();
+  let dotkey = opts.dotNum.toString().padStart(3, '0');
+  // integrated property
+  let integrated = data.integrated[dotkey] || [];
+  integrated.push(...locs);
+  data.integrated[dotkey] = integrated;
+  // last property
+  let last = data.last[dotkey] || [];
+  let locs_ts = locs.reduce((acc, val, idx) => {
+    acc.push(val);
+    if (idx > 0 && idx % 2 == 1) acc.push(0); // just add a zero timestamp
+    return acc;
+  }, []);
+  last.push(...locs_ts);
+  last = last.slice(0, KEEP_LAST*3);
+  data.last[dotkey] = last;
+  // last updated property
+  data.updated = dotkey;
+  console.log(data);
+  return db.doc('_/streams').set(data);
 }
 
 
