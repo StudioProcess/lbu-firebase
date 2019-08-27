@@ -8,8 +8,8 @@ service firebase.storage {
   match /b/{bucket}/o {
     match /{allPaths=**} {
       
-      // Limit file size to 5 MB
-      allow write: if request.resource.size < 5 * 1024 * 1024;
+      // Limit file size to 10 MB
+      allow write: if request.resource.size < 1024 * 1024 * 10;
       
       // Only authenticated users can read or write to the bucket
       // && request.auth != null;

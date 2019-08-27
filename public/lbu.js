@@ -243,13 +243,16 @@ function getFileMetadata(file) {
 //   { name:'MissingFile',            message:'No file provided' }
 //   { name:'InvalidFileParameter',   message:'Invalid file parameter' }
 //   { name:'InvalidFileType',        message:'Invalid file type. Please select PNG, JPEG or WEBP' }
+//   { name:'InvalidFileSize',        message:'File size exeeds upload limit' }
 //   { name:'InvalidCodeFormat',      message:'Invalid code format' }
 //   { name:'GeolocationUnsupported', message:'Geolocation feature unsupported in browser' }
 //   { name:'GeolocationDenied',      message:'Geolocation denied by user or browser settings' }
 //   { name:'GeolocationUnavailable', message:'Geolocation (temporarily) unavailable' }
 //   { name:'GeolocationTimeout',     message:'Geolocation timeout' }
 //   { name:'InvalidCode',            message:'Invalid upload code provided' }
-//   { name:'UploadError',            message: 'Error while uploading file', errorObject }
+//   { name:'UploadSize',             message:'Upload size limit exeeded' }
+//   { name:'UploadError',            message:'Error while uploading file', errorObject }
+const FILE_SIZE_LIMIT = 1024 * 1024 * 10;
 export async function upload(opts) {
   const defaults = {
     file: '',
@@ -276,6 +279,9 @@ export async function upload(opts) {
   }
   if ( !['image/png', 'image/jpeg', 'image/webp'].includes(opts.file.type) ) {
     throw { name:'InvalidFileType', message:'Invalid file type. Please select PNG, JPEG or WEBP' };
+  }
+  if (opts.file.size > FILE_SIZE_LIMIT * 0.99) {
+    throw { name:'InvalidFileSize', message:'File size exeeds upload limit' };
   }
   
   // Check code
@@ -344,7 +350,8 @@ export async function upload(opts) {
     }
     uploadTaskSnap = await uploadTask;
   } catch (e) {
-    throw { name:'UploadError', message: 'Error while uploading file', errorObject:e };
+    if (e.code_ == 'storage/unauthorized') throw { name:'UploadSize', message:'Upload size limit exeeded' };
+    else throw { name:'UploadError', message:'Error while uploading file', errorObject:e };
   }
   
   return {
