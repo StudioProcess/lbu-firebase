@@ -54,12 +54,12 @@
       <button id="submit" type="submit">Submit</button><br>
       
       <br>
-      Add Random Location: 
+      Sample Upload to random location: 
       <label for="sampleDot">dot</label> <input id="sampleDot" type="number" min="0" max="321" value="1"> 
       <label for="sampleDist">distance</label> <input id="sampleDist" type="number" min="0" value="100"> 
       <button id="sample" type="submit">Submit</button><br>
      
-      Add Precise Location: 
+      Sample Upload to precise location: 
       <label for="sampleDotLoc">dot</label> <input id="sampleDotLoc" type="number" min="0" max="321" value="1"> 
       <label for="sampleLat">latitude</label> <input id="sampleLat" type="number" min="-90" max="90" value="50.5" step="0.1"> 
       <label for="sampleLng">longitude</label> <input id="sampleLng" type="number" min="-180" max="180" value="0" step="0.1"> 
@@ -73,6 +73,15 @@
       <label for="forceLatStream">force latitude</label> <input id="forceLatStream" type="number" min="-90" max="90" step="0.1"> 
       <label for="forceLngStream">force longitude</label> <input id="forceLngStream" type="number" min="-180" max="180" step="0.1"> 
       <button id="sampleStream" type="submit">Submit</button><br>
+      
+      Add to multiple Streams (no uploads): 
+      <label for="startDotMultiple">dot start</label> <input id="startDotMultiple" type="number" min="0" max="321" value="1"> 
+      <label for="endDotMultiple">dot end</label> <input id="endDotMultiple" type="number" min="0" max="321" value="3"> 
+      <label for="stepsMultiple">steps to add</label> <input id="stepsMultiple" type="number" min="1" max="100" value="1"> 
+      <label for="stepChanceMultiple">step chance</label> <input id="stepChanceMultiple" type="number" min="0" max="1" step="0.01" value="1"> 
+      <label for="mindistMultiple">min dist</label> <input id="mindistMultiple" type="number" min="1" max="1000" value="50"> 
+      <label for="maxdistMultiple">max dist</label> <input id="maxdistMultiple" type="number" min="1" max="1000" value="250"> 
+      <button id="sampleMultiple" type="submit">Submit</button><br>
       
       <br>
       Reset Streams Data: <button id="resetStreams" type="submit">Reset</button><br>
@@ -254,6 +263,28 @@
         log('ADDING TO STREAMS', opts);
         
         lbu.sampleStreamData(opts).then(() => {
+          log('SUCCESS');
+        }).catch(err => {
+          log('ERROR', err);
+          throw err;
+        });
+      });
+      
+      
+      // Add to Multiple Streams Button
+      document.querySelector('#sampleMultiple').addEventListener('click', e => {
+        let opts = {
+          startDot: parseInt( document.querySelector('#startDotMultiple').value ),
+          endDot: parseInt( document.querySelector('#endDotMultiple').value ),
+          distanceMin: parseInt( document.querySelector('#mindistMultiple').value ),
+          distanceMax: parseInt( document.querySelector('#maxdistMultiple').value ),
+          steps: parseInt( document.querySelector('#stepsMultiple').value ),
+          stepChance: parseFloat( document.querySelector('#stepChanceMultiple').value ),
+        };
+        clearLog();
+        log('ADDING TO MULTIPLE STREAMS', opts);
+        
+        lbu.sampleStreamDataMultiple(opts).then(() => {
           log('SUCCESS');
         }).catch(err => {
           log('ERROR', err);

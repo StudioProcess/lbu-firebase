@@ -618,7 +618,7 @@ async function addSampleStream(data, opts) {
   }
   
   let dotkey = opts.dotNum.toString().padStart(3, '0');
-  
+  console.log('ADDING TO STREAM', dotkey, '(' + opts.steps + ' steps)')
   // determine start location (given, from previous, random)
   if ( opts.startLatitude === undefined || opts.startLatitude === null || isNaN(opts.startLatitude) ||
     opts.startLongitude === undefined || opts.startLongitude === null || isNaN(opts.startLongitude)) {
@@ -629,16 +629,16 @@ async function addSampleStream(data, opts) {
       let loc = await sampleLocation( last, dist );
       opts.startLatitude = loc[0];
       opts.startLongitude = loc[1];
-      console.log('previous location:', last[0], last[1], "start at:", loc[0], loc[1]);
+      console.log('  previous location:', last[0], last[1], "start at:", loc[0], loc[1]);
     } else {
       // get a random start location
       let loc = await sampleLocation(); 
       opts.startLatitude  = loc[0];
       opts.startLongitude = loc[1];
-      console.log('start at random location:', loc[0], loc[1]);
+      console.log('  start at random location:', loc[0], loc[1]);
     }
   } else {
-    console.log('start at forced location:', opts.startLatitude, opts.startLongitude);
+    console.log('  start at forced location:', opts.startLatitude, opts.startLongitude);
   }
   
   // generate stream of locations
@@ -690,6 +690,48 @@ export async function sampleStreamData(opts) {
   let data = (await db.doc('_/streams').get()).data();
   data = await addSampleStream(data, opts);
   // console.log(data);
+  return db.doc('_/streams').set(data);
+}
+
+// Add sample Data to multiple streams simultaneously
+export async function sampleStreamDataMultiple(opts) {
+  const defaults = {
+    startDot: 1,
+    endDot: 10,
+    distanceMin: 50, // distance between steps
+    distanceMax: 250,
+    steps: 1, // how many points to add to each dot stream
+    stepChance: 1,
+  };
+  opts = Object.assign({}, defaults, opts);
+  
+  if (opts.startDot > opts.endDot) {
+    let help = opts.startDot;
+    opts.startDot = opts.endDot;
+    opts.endDot = help;
+  }
+  
+  if (opts.startDot < 0 || opts.startDot > 321 || opts.endDot < 0 || opts.endDot > 321) {
+    console.warn('sampleScatterData: Invalid startDot / endDot parameters');
+    return;
+  }
+  
+  let data = (await db.doc('_/streams').get()).data();
+  
+  for (let dotNum = opts.startDot; dotNum <= opts.endDot; dotNum++) {
+    // how many steps to add to this dot stream 
+    let steps = 0;
+    for (let i=0; i<opts.steps; i++) { if (Math.random() < opts.stepChance) steps++; }
+    // add to dot stream
+    data = await addSampleStream(data, {
+      dotNum,
+      distanceMin: opts.distanceMin,
+      distanceMax: opts.distanceMax,
+      steps,
+    });
+  }
+  
+  // update data
   return db.doc('_/streams').set(data);
 }
 
