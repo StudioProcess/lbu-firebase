@@ -244,6 +244,7 @@ function getFileMetadata(file) {
 //   { name:'InvalidFileParameter',   message:'Invalid file parameter' }
 //   { name:'InvalidFileType',        message:'Invalid file type. Please select PNG, JPEG or WEBP' }
 //   { name:'InvalidFileSize',        message:'File size exeeds upload limit' }
+//   { name:'MissingCode',            message:'No upload code provided' }
 //   { name:'InvalidCodeFormat',      message:'Invalid code format' }
 //   { name:'GeolocationUnsupported', message:'Geolocation feature unsupported in browser' }
 //   { name:'GeolocationDenied',      message:'Geolocation denied by user or browser settings' }
