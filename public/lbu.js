@@ -160,6 +160,29 @@ export async function setupImageSelect(opts, cb) {
 
 
 // Streams data
+// Takes an optional callback that is called each time there is an update
+// Returns a promise that resolves with the first data snapshot
+// Data structure:
+// {
+//   integrated: {
+//     "000": [lat_0, lng_0, lat_1, lng_1, ...],
+//     "001": ...
+//      ...
+//     "321": ...
+//   },
+//   last: {
+//     "000": [lat_n, lng_n, ts_n, lat_n-1, lng_n-1, ts_n-1, ...],
+//     "001": ... 
+//      ...
+//     "321":
+//   }
+//   updated: "001"
+// }
+// NOTES: 
+//   "integrated": a simplified path for each dot stream (uses simplify.js). last entry are newest
+//   "last": the last n entries with timestamps. first entry is newest
+//   "updated": key of last updated stream
+
 export function onData(cb) {
   return new Promise( (resolve, _reject) => {
     db.doc('_/streams').onSnapshot(snap => {
