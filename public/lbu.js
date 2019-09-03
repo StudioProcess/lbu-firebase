@@ -404,15 +404,16 @@ function getGridCell(lat, lng) {
   while (lng > 180) lng -= 360;
   lng = Math.floor(lng);
   
-  const key = 'lat' + (lat<0 ? '-' : '+') + String(lat).padStart(3, '0') + '_lng' + (lng<0 ? '-' : '+') + String(lng).padStart(3, '0');
-  // console.log(key);
+  const key = 'lat' + (lat<0 ? '-' : '+') + String(Math.abs(lat)).padStart(3, '0') 
+    + '_lng' + (lng<0 ? '-' : '+') + String(Math.abs(lng)).padStart(3, '0');
+
   const grid = _sampleData[key];
   return grid;
 }
 
 
 function getGridCellNeighborhood(lat, lng, dist = 1) {
-  dist = Math.floor(dist)
+  dist = Math.floor(dist);
   let data = [];
   for ( let j=lat-dist; j<=lat+dist; j++ ) {
     for ( let i=lng-dist; i<=lng+dist; i++ ) {
@@ -443,6 +444,28 @@ export async function loadSampleData() {
   return _sampleDataPromise;
 }
 
+// Check sample data for non-number values
+export async function checkSampleData() {
+  let sampleData = await loadSampleData();
+  let emptyCount = 0;
+  let problemCount = 0;
+  for (let [key, data] of Object.entries(sampleData)) {
+    if (data.length === 0) emptyCount++;
+    if (data.length % 2 !== 0) {
+      console.warn(`${key}: not a multiple of 2 (${data.length})`);
+      problemCount++;
+    }
+    for (let [idx, val] of data.entries()) {
+      if (typeof val !== 'number') {
+        console.warn(`${key}, index ${idx}: ${val}`);
+        problemCount++;
+      }
+    }
+  }
+  let cells = Object.keys(sampleData).length;
+  console.log(`cells: ${cells}, empty: ${emptyCount} (${(emptyCount/cells*100).toFixed(0)}%), problems: ${problemCount}`,);
+}
+
 export async function sampleLocation(previousPoint, distance = 100) {
   await loadSampleData(); // make sure sample data is loaded
   if (!_sampleData) return; // return undefined if we have no data
@@ -460,7 +483,9 @@ export async function sampleLocation(previousPoint, distance = 100) {
   
   // let data = getGridCell(previousPoint[0], previousPoint[1]);
   const data = getGridCellNeighborhood(previousPoint[0], previousPoint[1], distance / KM_PER_DEG);
-  if (data.length == 0) return;
+  if (data.length == 0) {
+    throw 'Error getting grid data';
+  }
 
   // sort
   const points = [];
