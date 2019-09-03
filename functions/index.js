@@ -6,10 +6,10 @@ const KEEP_LAST = 10;           // how many points to keep in last array
 
 const functions = require('firebase-functions');
 const path = require('path');
-const admin = require('firebase-admin');
+const admin = require('firebase-admin'); // runs firebase with full (admin) rights
 admin.initializeApp();
-const firestore = admin.firestore();
-firestore.settings({ timestampsInSnapshots:true });
+const db = admin.firestore();
+db.settings({ timestampsInSnapshots:true });
 
 
 
@@ -17,7 +17,7 @@ firestore.settings({ timestampsInSnapshots:true });
  * Resolve upload code to dot number
  */
 async function resolveUploadCode(code) {
-  const snap = await firestore.collection('codes').doc(code).get();
+  const snap = await db.collection('codes').doc(code).get();
   const num = snap.data().number;
   return num;
 }
@@ -41,7 +41,7 @@ function simplifyArray(arr) {
  * data: { lat, lng, ts }
  */
 async function updatePaths(data) {
-  const pathsDoc = firestore.doc('paths/paths');
+  const pathsDoc = db.doc('paths/paths');
   const pathsSnap = await pathsDoc.get();
   const paths = pathsSnap.data();
   
@@ -81,7 +81,7 @@ exports.checkUpload = functions.storage.object().onFinalize( async (object, _con
   const id = path.dirname(filePath); // Upload ID e.g. 'uD6FpMVaX9YbGYt4vuWJ'
   
   // Check in Firestore: There needs to be a doc with that id and pending upload
-  const ref = firestore.collection('uploads').doc(id); // DocumentReference
+  const ref = db.collection('uploads').doc(id); // DocumentReference
   
   try {
     const snap = await ref.get(); // DocumentSnapshot
@@ -143,7 +143,7 @@ exports.cleanup = functions.https.onRequest((req, res) => {
   
   // Find uploads with photoUpload = PENDING and older than UPLOAD_TIMEOUT
   // Delete found docs (using promise pool)
-  const uploads = firestore.collection('uploads');
+  const uploads = db.collection('uploads');
   return uploads
   .where('photoUpload', '==', 'PENDING')
   .where('timestamp', '<', new Date(Date.now() - UPLOAD_TIMEOUT))
@@ -176,55 +176,46 @@ exports.cleanup = functions.https.onRequest((req, res) => {
  * Maintains a counter of sucessful uploads (stats/stats/uploadCount).
  */
 exports.updateCount = functions.firestore
-  .document('uploads/{uploadId}')
-  .onWrite( (change, _context) => {
-    let increment = 0;
-    let operation = ''; // for debug output only
-    if (!change.after.exists) {
-      // doc was deleted
-      operation = 'delete';
-      if (change.before.data().photoUpload === 'DONE') {
-        increment = -1;
-      }
-    } else if (!change.before.exists) {
-      // doc was created
-      operation = 'create';
-      if (change.after.data().photoUpload === 'DONE') {
-        increment = 1;
-      }
-    } else {
-      // doc was updated
-      operation = 'update';
-      const before = change.before.data().photoUpload;
-      const after = change.after.data().photoUpload;
-      if (before !== 'DONE' && after === 'DONE') { // it's done now
-        increment = 1;
-      } else if (before === 'DONE' && after !== 'DONE') { // not done anymore
-        increment = -1;
-      }
+.document('uploads/{uploadId}')
+.onWrite( (change, _context) => {
+  let increment = 0;
+  let operation = ''; // for debug output only
+  if (!change.after.exists) {
+    // doc was deleted
+    operation = 'delete';
+    if (change.before.data().photoUpload === 'DONE') {
+      increment = -1;
     }
+  } else if (!change.before.exists) {
+    // doc was created
+    operation = 'create';
+    if (change.after.data().photoUpload === 'DONE') {
+      increment = 1;
+    }
+  } else {
+    // doc was updated
+    operation = 'update';
+    const before = change.before.data().photoUpload;
+    const after = change.after.data().photoUpload;
+    if (before !== 'DONE' && after === 'DONE') { // it's done now
+      increment = 1;
+    } else if (before === 'DONE' && after !== 'DONE') { // not done anymore
+      increment = -1;
+    }
+  }
 
-    if (increment === 0) {
-      console.log(`operation: ${operation}, increment: ${increment}`);
-      return null;
-    }
-    
-    const stats = firestore.doc('stats/stats');
-    return firestore.runTransaction(transaction => {
-      return transaction.get(stats).then(doc => {
-        if (!doc.exists) {
-          throw { code:'STATS_DOC_MISSING' };
-        }
-        let oldCount = doc.data().uploadCount;
-        let newCount = oldCount ? oldCount + increment : increment;
-        transaction.update(stats, {uploadCount: newCount});
-        return newCount;
-      });
-    }).then( newCount => {
-      console.log(`operation: ${operation}, increment: ${increment}, uploadCount: ${newCount}`);
-      return null;
-    }).catch( err => {
-      console.error(err);
-      return null;
-    });
+  if (increment === 0) {
+    console.log(`operation: ${operation}, increment: ${increment}`);
+    return null;
+  }
+  
+  return db.doc('stats/stats').update({
+    uploadCount: admin.firestore.FieldValue.increment(increment)
+  }).then(_res => {
+    console.log(`operation: ${operation}, increment: ${increment}`);
+    return null;
+  }).catch(err => {
+    console.error(err);
+    return null;
   });
+});
