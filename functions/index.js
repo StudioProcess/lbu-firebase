@@ -40,14 +40,14 @@ function simplifyArray(arr) {
  * Once a new upload is complete, update dot document with it
  * data: { lat, lng, ts }
  */
-async function updateStreams(data) {
-  const streamsDoc = firestore.collection('_').doc('streams');
-  const streamsSnap = await streamsDoc.get();
-  const streams = streamsSnap.data();
+async function updatePaths(data) {
+  const pathsDoc = firestore.doc('paths/paths');
+  const pathsSnap = await pathsDoc.get();
+  const paths = pathsSnap.data();
   
   const dotIdx = String(data.dotNum).padStart(3, '0');
-  let integrated = streams.integrated[dotIdx] || [];
-  let last = streams.last[dotIdx] || [];
+  let integrated = paths.integrated[dotIdx] || [];
+  let last = paths.last[dotIdx] || [];
   
   integrated.push( data.lat, data.lng );
   if (integrated.length > SIMPLIFY_THRESHOLD*2) {
@@ -59,7 +59,7 @@ async function updateStreams(data) {
   last.unshift( data.lat, data.lng, data.ts );
   if (last.length > KEEP_LAST*3) last = last.slice(0, KEEP_LAST*3);
   
-  return streamsDoc.update({
+  return pathsDoc.update({
     [`integrated.${dotIdx}`]: integrated,
     [`last.${dotIdx}`]: last,
     'updated': dotIdx,
@@ -90,7 +90,7 @@ exports.checkUpload = functions.storage.object().onFinalize( async (object, _con
     console.log(snap.id, snap.data());
     const dotNum = await resolveUploadCode( snap.data().code );
     
-    await updateStreams({
+    await updatePaths({
       dotNum,
       lat: snap.data().location.latitude,
       lng: snap.data().location.longitude,
@@ -173,7 +173,7 @@ exports.cleanup = functions.https.onRequest((req, res) => {
 /**
  * Function: updateCount
  * Trigger:  Cloud Firestore, on write (create, update, delete) to uploads collection
- * Maintains a counter of sucessful uploads (_/stats/uploadCount).
+ * Maintains a counter of sucessful uploads (stats/stats/uploadCount).
  */
 exports.updateCount = functions.firestore
   .document('uploads/{uploadId}')
@@ -209,7 +209,7 @@ exports.updateCount = functions.firestore
       return null;
     }
     
-    const stats = firestore.doc('_/stats');
+    const stats = firestore.doc('stats/stats');
     return firestore.runTransaction(transaction => {
       return transaction.get(stats).then(doc => {
         if (!doc.exists) {

@@ -20,11 +20,11 @@ service cloud.firestore {
       allow get;
     }
     
-    match /_/stats {
+    match /stats/stats {
       allow get;
     }
     
-    match /_/streams {
+    match /paths/paths {
       allow get;
     }
     
@@ -39,11 +39,14 @@ service cloud.firestore {
     match /uploads/{upload} {
       allow list, delete;
     }
+    match /stats/stats {
+      allow update;
+    }
     
     // WARNING: Comment out in production!
     // Uncomment to allow resetting streams (via resetStreams()):
     // Uncomment to allow adding test data
-    match /_/streams {
+    match /paths/paths {
       allow update;
     }
     

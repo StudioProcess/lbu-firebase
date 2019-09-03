@@ -16,10 +16,10 @@
     samplePic(width, height): Promise
     uploadCode(dotNum): Promise
     sampleUpload(opts): Promise
-    sampleStreamData(opts): Promise
+    samplePathData(opts): Promise
   
   Reset functions:
-    resetStreams(): Promise
+    resetPaths(): Promise
     resetUploads(): Promise
 */
 
@@ -114,7 +114,7 @@ export function setupUploadCounter(opts) {
   
   return new Promise((resolve, _reject) => {
     
-    db.doc('_/stats').onSnapshot(snap => {
+    db.doc('stats/stats').onSnapshot(snap => {
       let count = snap.data().uploadCount;
       if (count !== undefined) {
         document.querySelector(opts.selector).textContent = count;
@@ -159,7 +159,7 @@ export async function setupImageSelect(opts, cb) {
 }
 
 
-// Streams data
+// Paths data
 // Takes an optional callback that is called each time there is an update
 // Returns a promise that resolves with the first data snapshot
 // Data structure:
@@ -185,10 +185,10 @@ export async function setupImageSelect(opts, cb) {
 
 export function onData(cb) {
   return new Promise( (resolve, _reject) => {
-    db.doc('_/streams').onSnapshot(snap => {
-      let streams = snap.data();
-      if (cb instanceof Function) cb(streams);
-      resolve(streams);
+    db.doc('paths/paths').onSnapshot(snap => {
+      let paths = snap.data();
+      if (cb instanceof Function) cb(paths);
+      resolve(paths);
     });
   });
 }
@@ -580,9 +580,9 @@ export async function sampleUpload(opts) {
   
   // Determine location
   const loc = { latitude: 0, longitude: 0, accuracy: 0, timestamp: new Date() };
-  const snap = await db.doc('_/streams').get();
-  const streams = snap.data().last;
-  const dotData = streams[ String(opts.dotNum).padStart(3,'0') ]; 
+  const snap = await db.doc('paths/paths').get();
+  const paths = snap.data().last;
+  const dotData = paths[ String(opts.dotNum).padStart(3,'0') ]; 
   const previousLoc = dotData ? dotData.slice(0,2) : null;
   let distance;
   if (opts.latitude !== undefined && opts.longitude !== undefined) { // use given location
@@ -618,7 +618,7 @@ export async function sampleUpload(opts) {
 // const SIMPLIFY_TOLERANCE = 0.5; // tolerance setting for simplify.js
 // const SIMPLIFY_THRESHOLD = 25;  // simplify only when more than this amount of points
 const KEEP_LAST = 10;           // how many points to keep in last array
-async function addSampleStream(data, opts) {
+async function addSamplePath(data, opts) {
   const defaults = {
     dotNum: 0,
     startLatitude: undefined, // if undefined and dot has no previous location, picks a random location
@@ -698,7 +698,7 @@ async function addSampleStream(data, opts) {
 
 // Add sample data to the stream, without going through the normal upload process
 // Note: This just adds data to the integrated stream, without simplifying
-export async function sampleStreamData(opts) {
+export async function samplePathData(opts) {
   const defaults = {
     dotNum: undefined, // if undefined, picks a random dot
     startLatitude: undefined, // if undefined and dot has no previous location, picks a random location
@@ -712,14 +712,14 @@ export async function sampleStreamData(opts) {
     opts.dotNum = Math.floor( 1 + Math.random() * 320 );
   }
   
-  let data = (await db.doc('_/streams').get()).data();
-  data = await addSampleStream(data, opts);
+  let data = (await db.doc('paths/paths').get()).data();
+  data = await addSamplePath(data, opts);
   // console.log(data);
-  return db.doc('_/streams').set(data);
+  return db.doc('paths/paths').set(data);
 }
 
-// Add sample Data to multiple streams simultaneously
-export async function sampleStreamDataMultiple(opts) {
+// Add sample Data to multiple paths simultaneously
+export async function samplePathDataMultiple(opts) {
   const defaults = {
     startDot: 1,
     endDot: 10,
@@ -741,14 +741,14 @@ export async function sampleStreamDataMultiple(opts) {
     return;
   }
   
-  let data = (await db.doc('_/streams').get()).data();
+  let data = (await db.doc('paths/paths').get()).data();
   
   for (let dotNum = opts.startDot; dotNum <= opts.endDot; dotNum++) {
     // how many steps to add to this dot stream 
     let steps = 0;
     for (let i=0; i<opts.steps; i++) { if (Math.random() < opts.stepChance) steps++; }
     // add to dot stream
-    data = await addSampleStream(data, {
+    data = await addSamplePath(data, {
       dotNum,
       distanceMin: opts.distanceMin,
       distanceMax: opts.distanceMax,
@@ -757,7 +757,8 @@ export async function sampleStreamDataMultiple(opts) {
   }
   
   // update data
-  return db.doc('_/streams').set(data);
+  console.log('setting data', data);
+  return db.doc('paths/paths').set(data);
 }
 
 
@@ -767,12 +768,12 @@ export async function sampleStreamDataMultiple(opts) {
  * Note: Needs rules enabled in firestore.rules and storage.rules
 */
 
-// Reset streams document to empty state
-export async function resetStreams() {
-  return db.doc('_/streams').set({
+// Reset paths document to empty state
+export async function resetPaths() {
+  return db.doc('paths/paths').set({
     integrated: {}, last: {}, updated: ''
   }).then(() => {
-    console.log('COMPLETED resetStreams');
+    console.log('COMPLETED resetPaths');
   });
 }
 

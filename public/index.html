@@ -28,7 +28,7 @@
     </div>
     
     <div>
-      streams: <textarea id="streams"></textarea>
+      paths: <textarea id="paths"></textarea>
     </div>
     
     <br>
@@ -65,16 +65,16 @@
       <label for="sampleLng">longitude</label> <input id="sampleLng" type="number" min="-180" max="180" value="0" step="0.1"> 
       <button id="sampleLoc" type="submit">Submit</button><br>
       
-      Add to Stream (no uploads): 
-      <label for="sampleDotStream">dot</label> <input id="sampleDotStream" type="number" min="0" max="321" value="1"> 
-      <label for="stepsStream">steps to add</label> <input id="stepsStream" type="number" min="1" max="100" value="3"> 
-      <label for="mindistStream">min dist</label> <input id="mindistStream" type="number" min="1" max="1000" value="50"> 
-      <label for="maxdistStream">max dist</label> <input id="maxdistStream" type="number" min="1" max="1000" value="250"> 
-      <label for="forceLatStream">force latitude</label> <input id="forceLatStream" type="number" min="-90" max="90" step="0.1"> 
-      <label for="forceLngStream">force longitude</label> <input id="forceLngStream" type="number" min="-180" max="180" step="0.1"> 
-      <button id="sampleStream" type="submit">Submit</button><br>
+      Add to Path (no uploads): 
+      <label for="sampleDotPath">dot</label> <input id="sampleDotPath" type="number" min="0" max="321" value="1"> 
+      <label for="stepsPath">steps to add</label> <input id="stepsPath" type="number" min="1" max="100" value="3"> 
+      <label for="mindistPath">min dist</label> <input id="mindistPath" type="number" min="1" max="1000" value="50"> 
+      <label for="maxdistPath">max dist</label> <input id="maxdistPath" type="number" min="1" max="1000" value="250"> 
+      <label for="forceLatPath">force latitude</label> <input id="forceLatPath" type="number" min="-90" max="90" step="0.1"> 
+      <label for="forceLngPath">force longitude</label> <input id="forceLngPath" type="number" min="-180" max="180" step="0.1"> 
+      <button id="samplePath" type="submit">Submit</button><br>
       
-      Add to multiple Streams (no uploads): 
+      Add to multiple Paths (no uploads): 
       <label for="startDotMultiple">dot start</label> <input id="startDotMultiple" type="number" min="0" max="321" value="1"> 
       <label for="endDotMultiple">dot end</label> <input id="endDotMultiple" type="number" min="0" max="321" value="3"> 
       <label for="stepsMultiple">steps to add</label> <input id="stepsMultiple" type="number" min="1" max="100" value="1"> 
@@ -84,7 +84,7 @@
       <button id="sampleMultiple" type="submit">Submit</button><br>
       
       <br>
-      Reset Streams Data: <button id="resetStreams" type="submit">Reset</button><br>
+      Reset Paths Data: <button id="resetPaths" type="submit">Reset</button><br>
       Reset Uploads: <button id="resetUploads" type="submit">Reset</button><br>
       <br>
       
@@ -140,7 +140,7 @@
       });
       
       lbu.onData(data => {
-        document.querySelector('#streams').value = JSON.stringify(data, null, 2);
+        document.querySelector('#paths').value = JSON.stringify(data, null, 2);
       }).then( () => {
         log('NOTE: dot data ready');
       })
@@ -249,20 +249,20 @@
       });
       
       
-      // Add to Stream Button
-      document.querySelector('#sampleStream').addEventListener('click', e => {
+      // Add to Path Button
+      document.querySelector('#samplePath').addEventListener('click', e => {
         let opts = {
-          dotNum: parseInt( document.querySelector('#sampleDotStream').value ),
-          steps: parseInt( document.querySelector('#stepsStream').value ),
-          distanceMin: parseInt( document.querySelector('#mindistStream').value ),
-          distanceMax: parseInt( document.querySelector('#maxdistStream').value ),
-          startLatitude: parseFloat( document.querySelector('#forceLatStream').value.replace(',', '.') ),
-          startLongitude: parseFloat( document.querySelector('#forceLngStream').value.replace(',', '.') ),
+          dotNum: parseInt( document.querySelector('#sampleDotPath').value ),
+          steps: parseInt( document.querySelector('#stepsPath').value ),
+          distanceMin: parseInt( document.querySelector('#mindistPath').value ),
+          distanceMax: parseInt( document.querySelector('#maxdistPath').value ),
+          startLatitude: parseFloat( document.querySelector('#forceLatPath').value.replace(',', '.') ),
+          startLongitude: parseFloat( document.querySelector('#forceLngPath').value.replace(',', '.') ),
         };
         clearLog();
-        log('ADDING TO STREAMS', opts);
+        log('ADDING TO PATHS', opts);
         
-        lbu.sampleStreamData(opts).then(() => {
+        lbu.samplePathData(opts).then(() => {
           log('SUCCESS');
         }).catch(err => {
           log('ERROR', err);
@@ -271,7 +271,7 @@
       });
       
       
-      // Add to Multiple Streams Button
+      // Add to Multiple Paths Button
       document.querySelector('#sampleMultiple').addEventListener('click', e => {
         let opts = {
           startDot: parseInt( document.querySelector('#startDotMultiple').value ),
@@ -282,9 +282,9 @@
           stepChance: parseFloat( document.querySelector('#stepChanceMultiple').value ),
         };
         clearLog();
-        log('ADDING TO MULTIPLE STREAMS', opts);
+        log('ADDING TO MULTIPLE PATHS', opts);
         
-        lbu.sampleStreamDataMultiple(opts).then(() => {
+        lbu.samplePathDataMultiple(opts).then(() => {
           log('SUCCESS');
         }).catch(err => {
           log('ERROR', err);
@@ -293,12 +293,12 @@
       });
       
       
-      // Reset Streams Button
-      document.querySelector('#resetStreams').addEventListener('click', e => {
+      // Reset Paths Button
+      document.querySelector('#resetPaths').addEventListener('click', e => {
         if (window.confirm('Warning: This will delete all visualization data!')) {
           clearLog();
-          log('RESETTING STREAMS');
-          lbu.resetStreams().then(() => {
+          log('RESETTING PATHS');
+          lbu.resetPaths().then(() => {
             log('SUCCESS');
           }).catch(err => {
             log('ERROR', err);
