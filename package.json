@@ -9,7 +9,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "deploy:rules": "firebase deploy --only firestore:rules,storage:rules",
     "deploy:firestore.rules": "firebase deploy --only firestore:rules",
-    "deploy:storage.rules": "firebase deploy --only storage:rules"
+    "deploy:storage.rules": "firebase deploy --only storage:rules",
+    "deploy:functions": "firebase deploy --only functions",
+    "deploy:indexes": "firebase deploy --only firestore:indexes"
   },
   "author": "Process Studio <contact@process.studio> (https://process.studio)",
   "license": "AGPL-3.0",

@@ -29,10 +29,16 @@ service cloud.firestore {
     }
     
     // WARNING: Comment out in production!
-    // Uncomment to allow uploading new codes:
-    // match /codes/{doc} {
-    //   allow write;
-    // }
+    // Uncomment to allow uploading codes and initialize database (via initDatabase()):
+    match /codes/{doc} {
+      allow write;
+    }
+    match /paths/paths {
+      allow write;
+    }
+    match /stats/stats {
+      allow write;
+    }
     
     // WARNING: Comment out in production!
     // Uncomment to allow resetting uploads (via resetUploads()):

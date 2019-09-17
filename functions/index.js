@@ -1,5 +1,6 @@
 'use strict';
 
+const REGION = 'europe-west1';
 const PATH_MAX_POINTS = 200; // maximum points per path. when more arrive, earliest ones are discarded
 
 const functions = require('firebase-functions');
@@ -50,7 +51,7 @@ async function updatePaths(data) {
  * Checks photos uploaded to cloud storage (there needs to be a corresponding doc)
  * then updates the doc with the upload data.
  */
-exports.checkUpload = functions.storage.object().onFinalize( async (object, _context) => {
+exports.checkUpload = functions.region(REGION).storage.object().onFinalize( async (object, _context) => {
   // const fileBucket = object.bucket; // The Storage bucket that contains the file.
   // const contentType = object.contentType; // File content type.
   // const metageneration = object.metageneration; // Number of times metadata has been generated. New objects have a value of 1.
@@ -97,13 +98,15 @@ exports.checkUpload = functions.storage.object().onFinalize( async (object, _con
  * Trigger:  Cloud HTTPS Request
  * Deletes pending upload docs that are older than a certain time.
  * This is run periodically as a cron job.
+ * Called via: https://europe-west1-lets-build-utopia.cloudfunctions.net/cleanup?key=...
+ * Note: Needs an environment set by firebase functions:config:set cron.key="..."
  */
 const crypto = require('crypto');
 const PromisePool = require('es6-promise-pool').PromisePool;
 const UPLOAD_TIMEOUT = 3600 * 1000; // [ms]
 const MAX_CONCURRENT = 3;
 
-exports.cleanup = functions.https.onRequest((req, res) => {
+exports.cleanup = functions.region(REGION).https.onRequest((req, res) => {
   const req_key = req.query.key || '';
   const key = (functions.config().cron && functions.config().cron.key) || '';
   
@@ -153,7 +156,7 @@ exports.cleanup = functions.https.onRequest((req, res) => {
  * Trigger:  Cloud Firestore, on write (create, update, delete) to uploads collection
  * Maintains a counter of sucessful uploads (stats/stats/uploadCount).
  */
-exports.updateCount = functions.firestore
+exports.updateCount = functions.region(REGION).firestore
 .document('uploads/{uploadId}')
 .onWrite( (change, _context) => {
   let increment = 0;

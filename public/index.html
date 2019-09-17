@@ -86,6 +86,7 @@
       <br>
       Reset Paths Data: <button id="resetPaths" type="submit">Reset</button><br>
       Reset Uploads: <button id="resetUploads" type="submit">Reset</button><br>
+      Initialize Database: <button id="initDatabase" type="submit">Initalize</button><br>
       <br>
       
       <div id="log"></div>
@@ -111,9 +112,9 @@
     
       import * as lbu from './lbu.js';
       const config = {
-        apiKey: "AIzaSyCdr0kpTbsED6du_p-RulO_m4L7aglFoio",
-        projectId: "letsbuildutopia-84770",
-        storageBucket: "letsbuildutopia-84770.appspot.com",
+        apiKey: "AIzaSyCIVzDiC_Gy8j9Qij7YQS8QyjDEYgNImRg",
+        projectId: "lets-build-utopia",
+        storageBucket: "lets-build-utopia.appspot.com",
       };
       lbu.init(config);
       
@@ -314,6 +315,21 @@
           clearLog();
           log('RESETTING UPLOADS');
           lbu.resetUploads().then(() => {
+            log('SUCCESS');
+          }).catch(err => {
+            log('ERROR', err);
+            throw err;
+          });
+        }
+      });
+      
+      
+      // Initialize Database Button
+      document.querySelector('#initDatabase').addEventListener('click', e => {
+        if (window.confirm('WARNING: THIS WILL RESET UPLOAD COUNT AND PATH DATA AND (RE-)UPLOAD CODES!')) {
+          clearLog();
+          log('INITIALIZING DATABASE');
+          lbu.initDatabase().then(() => {
             log('SUCCESS');
           }).catch(err => {
             log('ERROR', err);

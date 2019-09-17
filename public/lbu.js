@@ -22,6 +22,7 @@
   Reset functions:
     resetPaths(): Promise
     resetUploads(): Promise
+    resetDatabase(): Promise
 */
 
 const digits = {
@@ -827,4 +828,43 @@ function deleteQueryBatch(db, query, batchSize, resolve, reject) {
         deleteQueryBatch(db, query, batchSize, resolve, reject);
       }, 0);
     }).catch(reject);
+}
+
+export async function initDatabase() {
+  // paths
+  await db.doc('paths/paths').set({
+    paths: {}, updated: ''
+  }).then(() => {
+    console.log('  paths initialized');
+  });
+  
+  // stats
+  await db.doc('stats/stats').set({
+    uploadCount: 0
+  }).then(() => {
+    console.log('  stats initialized');
+  });
+  
+  // codes
+  let codes;
+  try {
+    const response = await fetch(_codesPath);
+    if (!response.ok) throw { message: 'Request failed', responseObject: response };
+    codes = await response.json(); // ['code0', 'code1', ..., 'code321']
+  } catch (err) {
+    console.log('Couldn\'t load upload codes');
+    return;
+  }
+  
+  let batch = db.batch();
+  for (let [idx, code] of codes.entries()) {
+    batch.set(
+      db.collection('codes').doc(code),
+      {number: idx}
+    );
+  }
+  return batch.commit().then(() => {
+    console.log('  codes initialized');
+    console.log('COMPLETED initDatabase');
+  });
 }
