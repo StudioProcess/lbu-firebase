@@ -17,6 +17,7 @@
     uploadCode(dotNum): Promise
     sampleUpload(opts): Promise
     samplePathData(opts): Promise
+    samplePathDataMultiple(opts): Promise
   
   Reset functions:
     resetPaths(): Promise
@@ -164,23 +165,16 @@ export async function setupImageSelect(opts, cb) {
 // Returns a promise that resolves with the first data snapshot
 // Data structure:
 // {
-//   integrated: {
+//   paths: {
 //     "000": [lat_0, lng_0, lat_1, lng_1, ...],
 //     "001": ...
 //      ...
 //     "321": ...
 //   },
-//   last: {
-//     "000": [lat_n, lng_n, ts_n, lat_n-1, lng_n-1, ts_n-1, ...],
-//     "001": ... 
-//      ...
-//     "321":
-//   }
 //   updated: "001"
 // }
 // NOTES: 
-//   "integrated": a simplified path for each dot stream (uses simplify.js). last entry are newest
-//   "last": the last n entries with timestamps. first entry is newest
+//   "paths": last lat/lng entries are newest. oldest are dropped when a maximum length is exceeded
 //   "updated": key of last updated stream
 
 export function onData(cb) {
@@ -581,9 +575,9 @@ export async function sampleUpload(opts) {
   // Determine location
   const loc = { latitude: 0, longitude: 0, accuracy: 0, timestamp: new Date() };
   const snap = await db.doc('paths/paths').get();
-  const paths = snap.data().last;
+  const paths = snap.data().paths;
   const dotData = paths[ String(opts.dotNum).padStart(3,'0') ]; 
-  const previousLoc = dotData ? dotData.slice(0,2) : null;
+  const previousLoc = dotData ? dotData.slice(-2) : null;
   let distance;
   if (opts.latitude !== undefined && opts.longitude !== undefined) { // use given location
     loc.latitude = opts.latitude;
@@ -613,11 +607,9 @@ export async function sampleUpload(opts) {
 
 
 
-// Adds sample data to the specified dot stream
+// Adds sample data to the specified dot path
 // Returns a new data object
-// const SIMPLIFY_TOLERANCE = 0.5; // tolerance setting for simplify.js
-// const SIMPLIFY_THRESHOLD = 25;  // simplify only when more than this amount of points
-const KEEP_LAST = 10;           // how many points to keep in last array
+const PATH_MAX_POINTS = 200; // maximum points per path. when more arrive, earliest ones are discarded
 async function addSamplePath(data, opts) {
   const defaults = {
     dotNum: 0,
@@ -677,18 +669,13 @@ async function addSamplePath(data, opts) {
     locs.push(...loc);
   }
   
-  // integrated property
-  let integrated = data.integrated[dotkey] || [];
-  integrated.push(...locs);
-  data.integrated[dotkey] = integrated;
-  
-  // last property
-  let last = data.last[dotkey] || [];
-  for (let i=0; i<locs.length; i+=2) {
-    last.unshift(locs[i], locs[i+1], 0);
+  // paths property
+  let path = data.paths[dotkey] || [];
+  path.push(...locs);
+  if (path.length > PATH_MAX_POINTS * 2) {
+    path = path.slice(- PATH_MAX_POINTS * 2);
   }
-  last = last.slice(0, KEEP_LAST*3);
-  data.last[dotkey] = last;
+  data.paths[dotkey] = path;
   
   // last updated property
   data.updated = dotkey;
@@ -696,8 +683,7 @@ async function addSamplePath(data, opts) {
   return data;
 }
 
-// Add sample data to the stream, without going through the normal upload process
-// Note: This just adds data to the integrated stream, without simplifying
+// Add sample data to the paths, without going through the normal upload process
 export async function samplePathData(opts) {
   const defaults = {
     dotNum: undefined, // if undefined, picks a random dot
@@ -771,7 +757,7 @@ export async function samplePathDataMultiple(opts) {
 // Reset paths document to empty state
 export async function resetPaths() {
   return db.doc('paths/paths').set({
-    integrated: {}, last: {}, updated: ''
+    paths: {}, updated: ''
   }).then(() => {
     console.log('COMPLETED resetPaths');
   });

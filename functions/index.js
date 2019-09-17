@@ -1,8 +1,6 @@
 'use strict';
 
-const SIMPLIFY_TOLERANCE = 0.5; // tolerance setting for simplify.js
-const SIMPLIFY_THRESHOLD = 25;  // simplify only when more than this amount of points
-const KEEP_LAST = 10;           // how many points to keep in last array
+const PATH_MAX_POINTS = 200; // maximum points per path. when more arrive, earliest ones are discarded
 
 const functions = require('firebase-functions');
 const path = require('path');
@@ -22,19 +20,7 @@ async function resolveUploadCode(code) {
   return num;
 }
 
-/*
- * Simplify flat array of x/y coordinates. e.g.: [x0, y0, x1, y1, ...]
- */
-const simplify = require('simplify-js');
 
-function simplifyArray(arr) {
-  let tmp = [];
-  for (let i=0; i<arr.length-1; i+=2) {
-    tmp.push({ x:arr[0], y:arr[1] });
-  }
-  tmp = simplify(tmp, SIMPLIFY_TOLERANCE);
-  return tmp.reduce((acc, val) => acc.concat(val.x, val.y), []);
-}
 
 /*
  * Once a new upload is complete, update dot document with it
@@ -43,25 +29,17 @@ function simplifyArray(arr) {
 async function updatePaths(data) {
   const pathsDoc = db.doc('paths/paths');
   const pathsSnap = await pathsDoc.get();
-  const paths = pathsSnap.data();
+  const pathsData = pathsSnap.data();
   
   const dotIdx = String(data.dotNum).padStart(3, '0');
-  let integrated = paths.integrated[dotIdx] || [];
-  let last = paths.last[dotIdx] || [];
-  
-  integrated.push( data.lat, data.lng );
-  if (integrated.length > SIMPLIFY_THRESHOLD*2) {
-    let len_before = integrated.length/2;
-    integrated = simplifyArray(integrated);
-    console.log(`simplified: ${len_before} -> ${integrated.length/2}`);
+  let path = pathsData.paths[dotIdx] || [];
+  path.push( data.lat, data.lng );
+  if (path.length > PATH_MAX_POINTS * 2) {
+    path = path.slice(- PATH_MAX_POINTS * 2); // keep last portion of array
   }
   
-  last.unshift( data.lat, data.lng, data.ts );
-  if (last.length > KEEP_LAST*3) last = last.slice(0, KEEP_LAST*3);
-  
   return pathsDoc.update({
-    [`integrated.${dotIdx}`]: integrated,
-    [`last.${dotIdx}`]: last,
+    [`paths.${dotIdx}`]: path,
     'updated': dotIdx,
   });
 }
