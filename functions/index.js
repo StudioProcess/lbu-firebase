@@ -42,6 +42,7 @@ async function updatePaths(data) {
   return pathsDoc.update({
     [`paths.${dotIdx}`]: path,
     'last_updated_path': dotIdx,
+    'last_updated_id': data.id,
   });
 }
 
@@ -73,7 +74,8 @@ exports.checkUpload = functions.region(REGION).storage.object().onFinalize( asyn
       dotNum,
       lat: snap.data().location.latitude,
       lng: snap.data().location.longitude,
-      ts:  snap.data().timestamp.toMillis()
+      ts:  snap.data().timestamp.toMillis(),
+      id,
     });
     
     return ref.update({

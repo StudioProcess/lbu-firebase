@@ -159,7 +159,8 @@
           onLocation: loc => {
             log('LOCATION', loc);
           },
-        }).then(_res => {
+        }).then(res => {
+          log('UPLOAD ID', res.id);
           log('SUCCESS'); // not printing res, has circular JSON
         }).catch(err => {
           log('ERROR', err);
@@ -210,7 +211,8 @@
           log('UPLOAD STARTED');
           upload.onProgress = status => { log('PROGRESS', status) };
           upload.onLocation = loc => { log('LOCATION', loc) };
-          lbu.upload(upload).then(() => {
+          lbu.upload(upload).then(res => {
+            log('UPLOAD ID', res.id);
             log('SUCCESS'); // not printing res, has circular JSON
           }).catch( err => {
             log('ERROR', err);
@@ -240,7 +242,8 @@
           log('UPLOAD STARTED');
           upload.onProgress = status => { log('PROGRESS', status) };
           upload.onLocation = loc => { log('LOCATION', loc) };
-          lbu.upload(upload).then(() => {
+          lbu.upload(upload).then(res => {
+            log('UPLOAD ID', res.id);
             log('SUCCESS'); // not printing res, has circular JSON
           }).catch( err => {
             log('ERROR', err);

@@ -173,10 +173,12 @@ export async function setupImageSelect(opts, cb) {
 //     "321": ...
 //   },
 //   last_updated_path: "001"
+//   last_updated_id: "NPQ5FIvh2KWnwHvkDUcJ"
 // }
 // NOTES: 
 //   "paths": last lat/lng entries are newest. oldest are dropped when a maximum length is exceeded
 //   "last_updated_path": key of last updated path
+//   "last_updated_id": id of the upload that caused the last update. is also returned by the upload() function in the 'id' property of its resolving object
 
 export function onData(cb) {
   return new Promise( (resolve, _reject) => {
@@ -256,7 +258,8 @@ function getFileMetadata(file) {
 // onLocation: callback function, called with { latitude, longitude, accuracy, timestamp }
 // locationOptions:  https://developer.mozilla.org/en-US/docs/Web/API/PositionOptions
 // locationOverride: {latitude, longitude, accuracy, timestamp}
-// Returns:    Promise, resolves with {docRef, storageRef, uploadTaskSnap}
+// Returns:    Promise, resolves with {id, docRef, storageRef, uploadTaskSnap}. 
+// Note:       An 'id' is also returned by onData() in its 'last_updated_id' property and can be used to dermine if the upload caused a data update
 // Errors:
 //   { name:'MissingFile',            message:'No file provided' }
 //   { name:'InvalidFileParameter',   message:'Invalid file parameter' }
@@ -374,6 +377,7 @@ export async function upload(opts) {
   }
   
   return {
+    id: docRef.id, // upload id, used to check if incoming paths data was caused by this upload
     docRef,
     storageRef,
     uploadTaskSnap
@@ -758,7 +762,7 @@ export async function samplePathDataMultiple(opts) {
 // Reset paths document to empty state
 export async function resetPaths() {
   return db.doc('paths/paths').set({
-    paths: {}, last_updated_path: ''
+    paths: {}, last_updated_path: '', last_updated_id: '',
   }).then(() => {
     console.log('COMPLETED resetPaths');
   });
@@ -833,7 +837,7 @@ function deleteQueryBatch(db, query, batchSize, resolve, reject) {
 export async function initDatabase() {
   // paths
   await db.doc('paths/paths').set({
-    paths: {}, last_updated_path: ''
+    paths: {}, last_updated_path: '', last_updated_id: '',
   }).then(() => {
     console.log('  paths initialized');
   });
