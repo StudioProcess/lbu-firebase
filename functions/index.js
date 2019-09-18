@@ -41,7 +41,7 @@ async function updatePaths(data) {
   
   return pathsDoc.update({
     [`paths.${dotIdx}`]: path,
-    'updated': dotIdx,
+    'last_updated_path': dotIdx,
   });
 }
 

@@ -172,11 +172,11 @@ export async function setupImageSelect(opts, cb) {
 //      ...
 //     "321": ...
 //   },
-//   updated: "001"
+//   last_updated_path: "001"
 // }
 // NOTES: 
 //   "paths": last lat/lng entries are newest. oldest are dropped when a maximum length is exceeded
-//   "updated": key of last updated stream
+//   "last_updated_path": key of last updated path
 
 export function onData(cb) {
   return new Promise( (resolve, _reject) => {
@@ -679,7 +679,7 @@ async function addSamplePath(data, opts) {
   data.paths[dotkey] = path;
   
   // last updated property
-  data.updated = dotkey;
+  data.last_updated_path = dotkey;
   
   return data;
 }
@@ -758,7 +758,7 @@ export async function samplePathDataMultiple(opts) {
 // Reset paths document to empty state
 export async function resetPaths() {
   return db.doc('paths/paths').set({
-    paths: {}, updated: ''
+    paths: {}, last_updated_path: ''
   }).then(() => {
     console.log('COMPLETED resetPaths');
   });
@@ -833,7 +833,7 @@ function deleteQueryBatch(db, query, batchSize, resolve, reject) {
 export async function initDatabase() {
   // paths
   await db.doc('paths/paths').set({
-    paths: {}, updated: ''
+    paths: {}, last_updated_path: ''
   }).then(() => {
     console.log('  paths initialized');
   });
