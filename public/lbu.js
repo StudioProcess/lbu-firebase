@@ -82,6 +82,7 @@ export function setupCodeEntry(opts) {
 }
 
 // Pop Counter
+// Updates textContent of selector with a number using thousands seperators e.g.: 1.234.567
 export function setupPopCounter(opts) {
   const defaults = {
     selector: '#populationClock',
@@ -108,6 +109,7 @@ export function setupPopCounter(opts) {
 
 // Live Upload Counter
 // Returns: Promise, resolves when first count is received
+// Updates textContent of selector with a number using thousands seperators e.g.: 1.234
 export function setupUploadCounter(opts) {
   const defaults = {
     selector: '#uploadCount'
@@ -119,7 +121,7 @@ export function setupUploadCounter(opts) {
     db.doc('stats/stats').onSnapshot(snap => {
       let count = snap.data().uploadCount;
       if (count !== undefined) {
-        document.querySelector(opts.selector).textContent = count;
+        document.querySelector(opts.selector).textContent = Number(count).toLocaleString('de');
         resolve(count);
       }
     });
