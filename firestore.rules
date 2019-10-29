@@ -30,31 +30,31 @@ service cloud.firestore {
     
     // WARNING: Comment out in production!
     // Uncomment to allow uploading codes and initialize database (via initDatabase()):
-    match /codes/{doc} {
-      allow write;
-    }
-    match /paths/paths {
-      allow write;
-    }
-    match /stats/stats {
-      allow write;
-    }
+    //match /codes/{doc} {
+    //  allow write;
+    //}
+    //match /paths/paths {
+    //  allow write;
+    //}
+    //match /stats/stats {
+    //  allow write;
+    //}
     
     // WARNING: Comment out in production!
     // Uncomment to allow resetting uploads (via resetUploads()):
-    match /uploads/{upload} {
-      allow list, delete;
-    }
-    match /stats/stats {
-      allow update;
-    }
+    //match /uploads/{upload} {
+    //  allow list, delete;
+    //}
+    //match /stats/stats {
+    //  allow update;
+    //}
     
     // WARNING: Comment out in production!
     // Uncomment to allow resetting streams (via resetStreams()):
     // Uncomment to allow adding test data
-    match /paths/paths {
-      allow update;
-    }
+    //match /paths/paths {
+    //  allow update;
+    //}
     
   }
 }

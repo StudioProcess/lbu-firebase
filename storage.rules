@@ -9,14 +9,14 @@ service firebase.storage {
     match /{allPaths=**} {
       
       // Limit file size to 10 MB
-      allow write: if request.resource.size < 1024 * 1024 * 10;
+      allow create: if request.resource.size < 1024 * 1024 * 10;
       
       // Only authenticated users can read or write to the bucket
       // && request.auth != null;
       
       // WARNING: Comment out in production!
       // Uncomment to allow resetting uploads (via resetUploads):
-      allow list, delete;
+      //allow list, delete;
       
     }
   }
