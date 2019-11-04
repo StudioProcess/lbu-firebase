@@ -22,7 +22,8 @@
   Reset functions:
     resetPaths(): Promise
     resetUploads(): Promise
-    resetDatabase(): Promise
+    initDatabase(): Promise
+    initCodes(): Promise
 */
 
 const digits = {
@@ -852,6 +853,13 @@ export async function initDatabase() {
   });
   
   // codes
+  return initCodes().then(() => {
+    console.log('  codes initialized');
+    console.log('COMPLETED initDatabase');
+  });
+}
+
+export async function initCodes() {
   let codes;
   try {
     const response = await fetch(_codesPath);
@@ -863,14 +871,23 @@ export async function initDatabase() {
   }
   
   let batch = db.batch();
+  let batch_rev = db.batch();
   for (let [idx, code] of codes.entries()) {
     batch.set(
       db.collection('codes').doc(code),
       {number: idx}
     );
+    // add reverse code
+    let rev_code = code.split('_');
+    rev_code.reverse(); // reverse array in place
+    rev_code = rev_code.join('_');
+    batch_rev.set(
+      db.collection('codes').doc(rev_code),
+      {number: idx}
+    );
   }
-  return batch.commit().then(() => {
-    console.log('  codes initialized');
-    console.log('COMPLETED initDatabase');
+  await batch.commit();
+  return batch_rev.commit().then(() => {
+    console.log('COMPLETED initCodes');
   });
 }

@@ -87,6 +87,7 @@
       Reset Paths Data: <button id="resetPaths" type="submit">Reset</button><br>
       Reset Uploads: <button id="resetUploads" type="submit">Reset</button><br>
       Initialize Database: <button id="initDatabase" type="submit">Initalize</button><br>
+      Initialize Codes: <button id="initCodes" type="submit">Initalize</button><br>
       <br>
       
       <div id="log"></div>
@@ -333,6 +334,20 @@
           clearLog();
           log('INITIALIZING DATABASE');
           lbu.initDatabase().then(() => {
+            log('SUCCESS');
+          }).catch(err => {
+            log('ERROR', err);
+            throw err;
+          });
+        }
+      });
+      
+      // Initialize Database Button
+      document.querySelector('#initCodes').addEventListener('click', e => {
+        if (window.confirm('WARNING: THIS WILL (RE-)UPLOAD CODES!')) {
+          clearLog();
+          log('INITIALIZING CODES');
+          lbu.initCodes().then(() => {
             log('SUCCESS');
           }).catch(err => {
             log('ERROR', err);
