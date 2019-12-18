@@ -2,6 +2,7 @@
 
 const REGION = 'europe-west1';
 const PATH_MAX_POINTS = 200; // maximum points per path. when more arrive, earliest ones are discarded
+const FALLBACK_LOCATION_DIST = 0.1; // distance (in angular degrees) when determining location from previous one.
 
 const functions = require('firebase-functions');
 const path = require('path');
@@ -46,6 +47,59 @@ async function updatePaths(data) {
   });
 }
 
+/*
+ * Get a pseudo-random value between min and max.
+ */
+function rnd(min, max) {
+  return min + Math.random() * (max-min);
+}
+
+/*
+ * Add a randomly generated location to paths as well as upload doc
+ * dotNum: number of dot/path
+ * uploadDocRef: ref to upload document
+ */
+async function updatePathsFallback(dotNum, uploadDocRef) {
+  const pathsDoc = db.doc('paths/paths');
+  const pathsSnap = await pathsDoc.get();
+  const pathsData = pathsSnap.data();
+  const dotIdx = String(dotNum).padStart(3, '0');
+  
+  let path = pathsData.paths[dotIdx] || [];
+  const loc = { timestamp: new Date() };
+  if (path.length > 2) {
+    // Random location near last known location
+    const dir = Math.random()*2*Math.PI; // random direction
+    loc.latitude  = path[path.length-2] + Math.sin(dir) * FALLBACK_LOCATION_DIST;
+    loc.longitude = path[path.length-1] + Math.cos(dir) * FALLBACK_LOCATION_DIST;
+    loc.accuracy = -1; 
+    // Make sure coordinates stay in range (just in case)
+    if (loc.latitude < -90) loc.latitude += 180;
+    else if (loc.latitude > 90) loc.latitude -= 180;
+    if (loc.longitude < -180) loc.longitude += 360;
+    else if (loc.longitude > 180) loc.longitude -= 360;
+  } else {
+    // Completely random location (approx in eurasia)
+    loc.latitude  = rnd(21, 71);
+    loc.longitude = rnd(-9, 143);
+    loc.accuracy = -2;
+  }
+  
+  // Update upload doc as well
+  await uploadDocRef.update({ location: loc });
+
+  // Update paths
+  path.push( loc.latitude, loc.longitude );
+  if (path.length > PATH_MAX_POINTS * 2) {
+    path = path.slice(- PATH_MAX_POINTS * 2); // keep last portion of array
+  }
+  return pathsDoc.update({
+    [`paths.${dotIdx}`]: path,
+    'last_updated_path': dotIdx,
+    'last_updated_id': uploadDocRef.id,
+  });
+}
+
 /**
  * Function: checkUpload
  * Trigger:  Cloud Storage, object finalize
@@ -67,16 +121,21 @@ exports.checkUpload = functions.region(REGION).storage.object().onFinalize( asyn
     const snap = await ref.get(); // DocumentSnapshot
     // Check upload status
     if (snap.data().photoUpload !== 'PENDING') throw { code:'NOT_PENDING' };
-    console.log(snap.id, snap.data());
+    // console.log(snap.id, snap.data());
     const dotNum = await resolveUploadCode( snap.data().code );
     
-    await updatePaths({
-      dotNum,
-      lat: snap.data().location.latitude,
-      lng: snap.data().location.longitude,
-      ts:  snap.data().timestamp.toMillis(),
-      id,
-    });
+    if (snap.data().location) {
+      await updatePaths({
+        dotNum,
+        lat: snap.data().location.latitude,
+        lng: snap.data().location.longitude,
+        ts:  snap.data().timestamp.toMillis(),
+        id,
+      });
+    } else {
+      // use fallback location
+      await updatePathsFallback(dotNum, ref);
+    }
     
     return ref.update({
       photoUpload: 'DONE',

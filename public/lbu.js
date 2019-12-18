@@ -39,11 +39,12 @@ const digits = {
   9: ['ios-happy',  0xf192],
 };
 
-let db, storage;
+let db, storage, config;
 
 
 // Firebase init
-export function init(config) {
+export function init(_config) {
+  config = _config;
   firebase.initializeApp(config);
   console.info(`Firebase SDK ${firebase.SDK_VERSION}`);
 
@@ -225,9 +226,8 @@ export function geolocationSupported() {
 }
 
 // options, see: https://developer.mozilla.org/en-US/docs/Web/API/Geolocation/getCurrentPosition
-async function getLocation(opts) {
-  if (!geolocationSupported()) throw { message:'Geolocation not supported', name:'NoGeolocationSupport' };
-
+async function getLocationFromBrowser(opts) {
+  // if (!geolocationSupported()) throw { message:'Geolocation not supported', name:'NoGeolocationSupport' };
   return new Promise( (resolve, reject) => {
     navigator.geolocation.getCurrentPosition(
       pos => resolve({
@@ -240,6 +240,18 @@ async function getLocation(opts) {
       opts
     );
   });
+}
+
+async function getLocationFromIp() {
+  const url = `https://www.googleapis.com/geolocation/v1/geolocate?key=${config.apiKey}`;
+  const response = await fetch(url, { method: 'POST' });
+  const data = await response.json();
+  return {
+    latitude: data.location.lat,
+    longitude: data.location.lng,
+    accuracy: data.accuracy,
+    timestamp: new Date(),
+  }
 }
 
 function getFileMetadata(file) {
@@ -285,15 +297,18 @@ export async function upload(opts) {
     code: '',
     onProgress: null,
     onLocation: null,
-    locationOptions: undefined,
+    locationOptions: {
+      timeout: 5500,
+      enableHighAccuracy: false,
+    },
     locationOverride: undefined,
   };
   opts = Object.assign({}, defaults, opts);
   
   // Check geolocation browser support
-  if (!geolocationSupported()) {
-    throw { name:'GeolocationUnsupported', message:'Geolocation feature unsupported in browser' }
-  }
+  // if (!geolocationSupported()) {
+  //   throw { name:'GeolocationUnsupported', message:'Geolocation feature unsupported in browser' }
+  // }
   
   // Check file
   if ( !opts.file ) {
@@ -321,19 +336,27 @@ export async function upload(opts) {
   }
   
   // Request Location
-  let loc = opts.locationOverride;
+  let loc = opts.locationOverride || null;
   if (!loc) {
     try {
       //  Throws PositionError (https://developer.mozilla.org/en-US/docs/Web/API/PositionError)
       //  code: 1 .. PERMISSION_DENIED, 2 .. POSITION_UNAVAILABLE, 3 .. TIMEOUT
-      loc = await getLocation(opts.locationOptions);
-      // console.log(loc);
+      loc = await getLocationFromBrowser(opts.locationOptions);
+      // console.log('browser location', loc);
     } catch (e) {
-      if (e.code == 1) throw { name:'GeolocationDenied', message:'Geolocation denied by user or browser settings' };
-      if (e.code == 2) throw { name:'GeolocationUnavailable', message:'Geolocation (temporarily) unavailable' };
-      if (e.code == 3) throw { name:'GeolocationTimeout', message:'Geolocation timeout' };
-      throw e;
+      // console.log('browser location failed', e);
+      // if (e.code == 1) throw { name:'GeolocationDenied', message:'Geolocation denied by user or browser settings' };
+      // if (e.code == 2) throw { name:'GeolocationUnavailable', message:'Geolocation (temporarily) unavailable' };
+      // if (e.code == 3) throw { name:'GeolocationTimeout', message:'Geolocation timeout' };
+      // throw e;
+      try {
+        loc = await getLocationFromIp();
+        // console.log('ip location', loc);
+      } catch (e) {
+        // console.log('ip location failed', e);
+      }
     }
+
   }
   if (opts.onLocation instanceof Function) {
     opts.onLocation(loc);
