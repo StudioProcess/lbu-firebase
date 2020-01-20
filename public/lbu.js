@@ -172,9 +172,14 @@ function getImageRotation( buffer ) {
     }
   }
   const rotation = {
+    0: 'rotate(0deg)',
     1: 'rotate(0deg)',
+    2: 'rotate(0deg)scale(-1,1)',
     3: 'rotate(180deg)',
+    4: 'rotate(180deg)scale(-1,1)',
+    5: 'rotate(90deg)scale(1,-1)',
     6: 'rotate(90deg)',
+    7: 'rotate(270deg)scale(1,-1)',
     8: 'rotate(270deg)'
   };
   if (!(value in rotation)) return '';
@@ -206,12 +211,12 @@ export async function setupImageSelect(opts, cb) {
         if (opts.background) {
           let img = document.querySelector(opts.background);
           img.style.setProperty('background-image', `url(${dataURL})`, 'important');
-          if (rotation) img.style.transform = rotation;
+          if (rotation) { img.style.transform = rotation; } else { img.style.transform = ''; }
         }
         if (opts.image) {
           let img = document.querySelector(opts.image);
           img.src = dataURL;
-          if (rotation) img.style.transform = rotation;
+          if (rotation) { img.style.transform = rotation; } else { img.style.transform = ''; }
         }
         resolve(e);
         if (cb instanceof Function) cb(e);
