@@ -11,7 +11,8 @@
     "deploy:firestore.rules": "firebase deploy --only firestore:rules",
     "deploy:storage.rules": "firebase deploy --only storage:rules",
     "deploy:functions": "firebase deploy --only functions",
-    "deploy:indexes": "firebase deploy --only firestore:indexes"
+    "deploy:indexes": "firebase deploy --only firestore:indexes",
+    "preinstall": "cd functions; npm install; cd .."
   },
   "author": "Process Studio <contact@process.studio> (https://process.studio)",
   "license": "AGPL-3.0",
@@ -21,7 +22,7 @@
     "firebase-functions": "^3.3.0"
   },
   "devDependencies": {
-    "firebase-tools": "^7.10.0",
+    "firebase-tools": "^8.4.0",
     "live-server": "^1.2.1"
   }
 }
